@@ -9,7 +9,7 @@ import (
 
 func (s *GRPCServer) HealthCheck(ctx context.Context, in *pb.HealthCheckRequest) (*pb.HealthCheckResponse, error) {
 
-	log.Printf("Received: Health check rquest")
+	log.Printf("Received: Health check request")
 
 	return &pb.HealthCheckResponse{
 		Status: "OK",
