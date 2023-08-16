@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package orders;
+
+option go_package = "github.com/Mik3y-F/order-management-system/orders";
+
+service Orders {
+    rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse) {}
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+    string status = 1;
+}
