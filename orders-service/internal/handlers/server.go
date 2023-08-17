@@ -21,8 +21,8 @@ func NewGRPCServer() *GRPCServer {
 	return &GRPCServer{}
 }
 
-func (s *GRPCServer) Run() error {
-	lis, err := net.Listen("tcp", port)
+func (s *GRPCServer) Run(bindAddress string, port string) error {
+	lis, err := net.Listen("tcp", bindAddress+":"+port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
