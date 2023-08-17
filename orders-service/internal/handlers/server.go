@@ -9,10 +9,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	port = ":50051"
-)
-
 type GRPCServer struct {
 	pb.UnimplementedOrdersServer
 }

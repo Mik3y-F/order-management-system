@@ -59,22 +59,16 @@ jobs:
         service: [orders-service]
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Change to Service Directory
-        run: cd ${{ matrix.service }}
-
-      - name: Echo working directory
-        run: pwd
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
           go-version: "^1.21"
 
-      - name: Run Gosec Security Scanner
-        if: contains(github.event.head_commit.modified, matrix.service) || github.event_name == 'pull_request'
-        uses: securego/gosec@master
-        with:
-          args: "./..."
+      - name: Run gosec
+        run: |
+          curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s v2.16.0
+          cd ${{ matrix.service }}
+          gosec ./...
