@@ -69,6 +69,6 @@ jobs:
 
       - name: Run gosec
         run: |
-          curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s v2.16.0
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
           cd ${{ matrix.service }}
           gosec ./...
