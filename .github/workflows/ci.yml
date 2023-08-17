@@ -1,0 +1,74 @@
+name: Lint, Test, and Security Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [orders-service]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "^1.21"
+
+      - name: Run golangci-lint
+        if: contains(github.event.head_commit.modified, matrix.service) || github.event_name == 'pull_request'
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.53
+          working-directory: ${{ matrix.service }}
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [orders-service]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "^1.21"
+
+      - name: Run Tests
+        if: contains(github.event.head_commit.modified, matrix.service) || github.event_name == 'pull_request'
+        run: |
+          cd ${{ matrix.service }}
+          go test -v -race ./... # -race enables race condition tests
+
+  security:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [orders-service]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "^1.21"
+
+      - name: Run gosec
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          cd ${{ matrix.service }}
+          gosec ./...
