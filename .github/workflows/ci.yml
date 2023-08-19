@@ -33,6 +33,9 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      id-token: "write"
     strategy:
       matrix:
         service: [orders-service, payments-service]
@@ -46,11 +49,22 @@ jobs:
         with:
           go-version: "^1.21"
 
+      - id: "auth"
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials: ${{ secrets.GCP_CREDENTIALS }}
+
+      # gcloud is needed since we are using the Firestore emulator for testing
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
+        with:
+          version: ">= 363.0.0"
+
       - name: Run Tests
         if: contains(github.event.head_commit.modified, matrix.service) || github.event_name == 'pull_request'
         run: |
           cd ${{ matrix.service }}
-          go test -v -race ./... # -race enables race condition tests
+          make test
 
   security:
     runs-on: ubuntu-latest
@@ -67,8 +81,22 @@ jobs:
         with:
           go-version: "^1.21"
 
+      - name: Cache gosec
+        uses: actions/cache@v2
+        with:
+          path: ~/go/bin/gosec
+          key: ${{ runner.os }}-gosec-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-gosec-
+
+      - name: Install gosec
+        run: |
+          if ! command -v gosec &> /dev/null
+          then
+            go install github.com/securego/gosec/v2/cmd/gosec@latest
+          fi
+
       - name: Run gosec
         run: |
-          go install github.com/securego/gosec/v2/cmd/gosec@latest
           cd ${{ matrix.service }}
-          gosec ./...
+          make security

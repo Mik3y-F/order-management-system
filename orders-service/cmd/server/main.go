@@ -1,27 +1,52 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
+	db "github.com/Mik3y-F/order-management-system/orders/internal/firebase"
 	"github.com/Mik3y-F/order-management-system/orders/internal/handlers"
+)
+
+const (
+	BIND_ADDRESS = "BIND_ADDRESS"
+	PORT         = "PORT"
+
+	DEFAULT_BIND_ADDRESS = "localhost"
+	DEFAULT_PORT         = "50051"
 )
 
 func main() {
 
+	ctx := context.Background()
+
 	log.Printf("Starting server")
 
-	bindAddress := os.Getenv("BIND_ADDRESS")
+	bindAddress := os.Getenv(BIND_ADDRESS)
 	if bindAddress == "" {
-		bindAddress = "localhost"
+		bindAddress = DEFAULT_BIND_ADDRESS
 	}
 
-	port := os.Getenv("PORT")
+	port := os.Getenv(PORT)
 	if port == "" {
-		port = "50051"
+		port = DEFAULT_PORT
 	}
 
 	s := handlers.NewGRPCServer()
+
+	firebase := db.NewFirebaseService()
+	firestoreClient, err := firebase.GetApp().Firestore(ctx)
+	if err != nil {
+		log.Fatalf("failed to create firestore client: %v", err)
+	}
+	defer firestoreClient.Close()
+
+	firestoreService := db.NewFirestoreService(firestoreClient)
+	productService := db.NewProductService(firestoreService)
+
+	s.ProductService = productService
+
 	if err := s.Run(bindAddress, port); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

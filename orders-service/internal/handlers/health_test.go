@@ -1,4 +1,4 @@
-package handlers
+package handlers_test
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 func TestGRPCServer_HealthCheck(t *testing.T) {
 
-	s := NewGRPCServer()
+	s := NewTestGRPCServer(t)
 
 	type args struct {
 		ctx context.Context
