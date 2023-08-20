@@ -40,9 +40,21 @@ func (s *GRPCServer) Run(ctx context.Context, bindAddress string, port string) e
 
 	pb.RegisterOrdersServer(s.grpcServer, s)
 
+	go func() {
+		if err := s.grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve: %v", err)
+		}
+	}()
+
 	log.Printf("Starting server on port %v", lis.Addr())
 
-	return s.grpcServer.Serve(lis)
+	// Listen for context cancellation
+	<-ctx.Done()
+
+	// If context is cancelled, stop the server
+	s.Stop()
+
+	return nil
 }
 
 // Stop gracefully stops the GRPC server.
@@ -53,12 +65,4 @@ func (s *GRPCServer) Stop() {
 	if s.grpcServer != nil {
 		s.grpcServer.GracefulStop()
 	}
-}
-
-// IsRunning checks if the GRPC server is running.
-func (s *GRPCServer) IsRunning() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	return s.grpcServer != nil
 }
