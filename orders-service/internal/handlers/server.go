@@ -40,21 +40,9 @@ func (s *GRPCServer) Run(ctx context.Context, bindAddress string, port string) e
 
 	pb.RegisterOrdersServer(s.grpcServer, s)
 
-	go func() {
-		if err := s.grpcServer.Serve(lis); err != nil {
-			log.Fatalf("Failed to serve: %v", err)
-		}
-	}()
-
 	log.Printf("Starting server on port %v", lis.Addr())
 
-	// Listen for context cancellation
-	<-ctx.Done()
-
-	// If context is cancelled, stop the server
-	s.Stop()
-
-	return nil
+	return s.grpcServer.Serve(lis)
 }
 
 // Stop gracefully stops the GRPC server.
