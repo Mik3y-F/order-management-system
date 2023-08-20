@@ -3,7 +3,6 @@ package handlers_test
 import (
 	"fmt"
 	"net"
-	"sync"
 	"testing"
 	"time"
 
@@ -82,10 +81,6 @@ func TestGRPCServer_Run(t *testing.T) {
 
 // Helper function to get a free port
 func getFreePort(t *testing.T) string {
-	m := &sync.Mutex{}
-	m.Lock()
-	defer m.Unlock()
-
 	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
 	if err != nil {
 		t.Fatalf("error resolving tcp address: %v", err)
