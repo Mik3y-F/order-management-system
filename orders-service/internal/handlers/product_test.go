@@ -32,10 +32,6 @@ func TestGRPCServer_CreateProduct(t *testing.T) {
 
 	s.ProductService.CreateProductFunc = mockCreateProductFunc
 
-	type args struct {
-		ctx     context.Context
-		request *pb.CreateProductRequest
-	}
 	tests := []struct {
 		name    string
 		request *pb.CreateProductRequest

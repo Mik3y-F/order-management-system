@@ -40,6 +40,11 @@ jobs:
       matrix:
         service: [orders-service, payments-service]
 
+    env:
+      GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+      GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+      FIRESTORE_EMULATOR_HOST: ${{ secrets.FIRESTORE_EMULATOR_HOST }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3

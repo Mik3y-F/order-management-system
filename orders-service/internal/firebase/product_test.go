@@ -79,8 +79,8 @@ func TestProductService_CheckPreconditions(t *testing.T) {
 		wantPanic bool
 	}{
 		{
-			name:      "Check Preconditions Failed - nil DB",
-			fields:    fields{
+			name: "Check Preconditions Failed - nil DB",
+			fields: fields{
 				db: nil,
 			},
 			wantPanic: true,
