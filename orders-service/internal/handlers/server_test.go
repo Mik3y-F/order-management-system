@@ -73,7 +73,7 @@ func TestGRPCServer_Run(t *testing.T) {
 				if (err != nil) != tt.wantErr {
 					t.Errorf("GRPCServer.Run() error = %v, wantErr %v", err, tt.wantErr)
 				}
-			case <-time.After(2 * time.Second):
+			case <-ctx.Done():
 				if tt.wantErr {
 					t.Errorf("GRPCServer.Run() expected error for port %v, but got none", tt.port)
 				}
