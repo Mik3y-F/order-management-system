@@ -72,6 +72,15 @@ jobs:
           cd ${{ matrix.service }}
           make test
 
+      - name: Check Coverage
+        run: |
+          make coverage
+          coverage=$(go tool cover -func=coverage.out | grep 'total:' | awk '{print substr($3, 1, length($3)-1)}')
+          if (( $(echo "$coverage < 20" | bc -l) )); then
+            echo "Code coverage is less than 20%"
+            exit 1
+          fi
+
   security:
     runs-on: ubuntu-latest
     strategy:

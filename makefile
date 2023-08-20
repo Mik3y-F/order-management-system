@@ -1,6 +1,6 @@
 SERVICES = orders-service
 
-default: lint test security
+default: lint test security coverage
 
 lint:
 	for service in $(SERVICES); do \
@@ -12,9 +12,14 @@ test:
 		$(MAKE) -C $$service test; \
 	done
 
+coverage:
+	for service in $(SERVICES); do \
+		$(MAKE) -C $$service coverage; \
+	done
+
 security:
 	for service in $(SERVICES); do \
 		$(MAKE) -C $$service security; \
 	done
 
-.PHONY: lint test security
+.PHONY: lint test security coverage
