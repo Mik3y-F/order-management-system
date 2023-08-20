@@ -58,14 +58,19 @@ func TestGRPCServer_Run(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			server := handlers.NewGRPCServer()
+			errCh := make(chan error)
 			go func() {
-				err := server.Run(tt.bindAddr, tt.port)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("GRPCServer.Run() error = %v, wantErr %v", err, tt.wantErr)
-				}
+				errCh <- server.Run(tt.bindAddr, tt.port)
 			}()
 			// Give the server a moment to start up/shut down
 			time.Sleep(1 * time.Second)
+			select {
+			case err := <-errCh:
+				if (err != nil) != tt.wantErr {
+					t.Errorf("GRPCServer.Run() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			default:
+			}
 		})
 	}
 }
@@ -89,3 +94,4 @@ func getFreePort(t *testing.T) string {
 	defer listener.Close()
 	return fmt.Sprintf("%d", listener.Addr().(*net.TCPAddr).Port)
 }
+
