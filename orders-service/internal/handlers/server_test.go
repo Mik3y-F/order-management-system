@@ -59,17 +59,22 @@ func TestGRPCServer_Run(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			server := handlers.NewGRPCServer()
 			errCh := make(chan error)
+
 			go func() {
 				errCh <- server.Run(tt.bindAddr, tt.port)
 			}()
-			// Give the server a moment to start up/shut down
-			time.Sleep(1 * time.Second)
+
+			// Wait for server to respond or timeout after a specified time
 			select {
 			case err := <-errCh:
 				if (err != nil) != tt.wantErr {
 					t.Errorf("GRPCServer.Run() error = %v, wantErr %v", err, tt.wantErr)
 				}
-			default:
+			case <-time.After(1 * time.Second): // timeout after 1 second
+				// if we got to here, then there was no error from server, this is good for valid port.
+				if tt.wantErr {
+					t.Errorf("GRPCServer.Run() expected error for port %v, but got none", tt.port)
+				}
 			}
 		})
 	}
@@ -94,4 +99,3 @@ func getFreePort(t *testing.T) string {
 	defer listener.Close()
 	return fmt.Sprintf("%d", listener.Addr().(*net.TCPAddr).Port)
 }
-
