@@ -40,12 +40,12 @@ func TestGRPCServer_Run(t *testing.T) {
 		port     string
 		wantErr  bool
 	}{
-		// {
-		// 	name:     "valid bind address and port",
-		// 	bindAddr: "localhost",
-		// 	port:     getFreePort(t),
-		// 	wantErr:  false,
-		// },
+		{
+			name:     "valid bind address and port",
+			bindAddr: "localhost",
+			port:     getFreePort(t),
+			wantErr:  false,
+		},
 		{
 			name:     "invalid port",
 			bindAddr: "localhost",
@@ -61,6 +61,7 @@ func TestGRPCServer_Run(t *testing.T) {
 
 			go func() {
 				errCh <- server.Run(tt.bindAddr, tt.port)
+				defer server.Stop()
 			}()
 
 			// Wait for server to respond or timeout after a specified time
@@ -69,7 +70,7 @@ func TestGRPCServer_Run(t *testing.T) {
 				if (err != nil) != tt.wantErr {
 					t.Errorf("GRPCServer.Run() error = %v, wantErr %v", err, tt.wantErr)
 				}
-			case <-time.After(1 * time.Second): // timeout after 1 second
+			case <-time.After(1 * time.Second): // increase timeout to 5 seconds
 				// if we got to here, then there was no error from server, this is good for valid port.
 				if tt.wantErr {
 					t.Errorf("GRPCServer.Run() expected error for port %v, but got none", tt.port)
