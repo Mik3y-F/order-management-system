@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 }
 
 func startFirestoreEmulator() (*exec.Cmd, io.ReadCloser) {
-	cmd := exec.Command("gcloud", "emulators", "firestore", "start", "--host-port=localhost:9090")
+	cmd := exec.Command("gcloud", "emulators", "firestore", "start", "--host-port=localhost:9090", "--quiet")
 
 	// this makes the emulator killable
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
