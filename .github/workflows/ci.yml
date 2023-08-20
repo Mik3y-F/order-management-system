@@ -52,7 +52,7 @@ jobs:
       - id: "auth"
         uses: "google-github-actions/auth@v1"
         with:
-          credentials: ${{ secrets.GCP_CREDENTIALS }}
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
       # gcloud is needed since we are using the Firestore emulator for testing
       - name: "Set up Cloud SDK"
