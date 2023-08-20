@@ -27,7 +27,8 @@ func NewFirebaseService() *FirebaseService {
 	c := pkg.MustGetEnv(GOOGLE_APPLICATION_CREDENTIALS)
 	log.Println(c)
 
-	if pkg.MustGetEnv(ENVIRONMENT) == "dev" {
+	env := pkg.MustGetEnv(ENVIRONMENT)
+	if env == "dev" || env == "test" {
 		pkg.MustGetEnv(FIRESTORE_EMULATOR_HOST)
 	}
 
