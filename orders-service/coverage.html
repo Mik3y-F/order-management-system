@@ -1,0 +1,356 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>firebase: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/Mik3y-F/order-management-system/orders/internal/firebase/firebase.go (91.7%)</option>
+				
+				<option value="file1">github.com/Mik3y-F/order-management-system/orders/internal/firebase/firestore.go (100.0%)</option>
+				
+				<option value="file2">github.com/Mik3y-F/order-management-system/orders/internal/firebase/product.go (92.3%)</option>
+				
+				<option value="file3">github.com/Mik3y-F/order-management-system/orders/internal/handlers/health.go (100.0%)</option>
+				
+				<option value="file4">github.com/Mik3y-F/order-management-system/orders/internal/handlers/product.go (100.0%)</option>
+				
+				<option value="file5">github.com/Mik3y-F/order-management-system/orders/internal/handlers/server.go (94.7%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package firebase
+
+import (
+        "context"
+        "log"
+
+        firebase "firebase.google.com/go"
+        pkg "github.com/Mik3y-F/order-management-system/orders/pkg"
+)
+
+const (
+        //  These are the environment variable names that need to be set in order for the
+        //  Firebase SDK to work.
+        GOOGLE_APPLICATION_CREDENTIALS = "GOOGLE_APPLICATION_CREDENTIALS" // #nosec G101 - This is an env variable name
+        GOOGLE_CLOUD_PROJECT           = "GOOGLE_CLOUD_PROJECT"           // #nosec G101 - This is an env variable name
+        FIRESTORE_EMULATOR_HOST        = "FIRESTORE_EMULATOR_HOST"
+        ENVIRONMENT                    = "ENVIRONMENT"
+)
+
+type FirebaseService struct {
+        app *firebase.App
+}
+
+func NewFirebaseService() *FirebaseService <span class="cov8" title="1">{
+        // Check preconditions
+        // https://firebase.google.com/docs/admin/setup/#initialize_the_sdk_in_non-google_environments
+        c := pkg.MustGetEnv(GOOGLE_APPLICATION_CREDENTIALS)
+        log.Println(c)
+
+        env := pkg.MustGetEnv(ENVIRONMENT)
+        if env == "dev" || env == "test" </span><span class="cov8" title="1">{
+                pkg.MustGetEnv(FIRESTORE_EMULATOR_HOST)
+        }</span>
+
+        <span class="cov8" title="1">projectID := pkg.MustGetEnv(GOOGLE_CLOUD_PROJECT)
+
+        conf := &amp;firebase.Config{ProjectID: projectID}
+        app, err := firebase.NewApp(context.Background(), conf)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("error initializing app: %v\n", err)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;FirebaseService{
+                app: app,
+        }</span>
+}
+
+func (s *FirebaseService) GetApp() *firebase.App <span class="cov8" title="1">{
+        return s.app
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package firebase
+
+import (
+        "cloud.google.com/go/firestore"
+)
+
+type FirestoreService struct {
+        client *firestore.Client
+}
+
+func NewFirestoreService(client *firestore.Client) *FirestoreService <span class="cov8" title="1">{
+        return &amp;FirestoreService{
+                client: client,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package firebase
+
+import (
+        "context"
+
+        "cloud.google.com/go/firestore"
+        "github.com/Mik3y-F/order-management-system/orders/internal/service"
+)
+
+var _ service.ProductService = (*ProductService)(nil)
+
+type ProductService struct {
+        db *FirestoreService
+}
+
+func NewProductService(db *FirestoreService) *ProductService <span class="cov8" title="1">{
+        return &amp;ProductService{
+                db: db,
+        }
+}</span>
+
+func (s *ProductService) CheckPreconditions() <span class="cov8" title="1">{
+        if s.db == nil </span><span class="cov8" title="1">{
+                panic("no DB service provided")</span>
+        }
+}
+
+func (s *ProductService) productCollection() *firestore.CollectionRef <span class="cov8" title="1">{
+        s.CheckPreconditions()
+
+        return s.db.client.Collection("products")
+}</span>
+
+func (s *ProductService) CreateProduct(ctx context.Context, product *service.Product) (*service.Product, error) <span class="cov8" title="1">{
+        s.CheckPreconditions()
+
+        productModel := s.marshallProduct(product)
+
+        docRef, _, writeErr := s.productCollection().Add(ctx, productModel)
+        if writeErr != nil </span><span class="cov0" title="0">{
+                return nil, writeErr
+        }</span>
+
+        <span class="cov8" title="1">product.Id = docRef.ID
+
+        return product, nil</span>
+}
+
+func (s *ProductService) marshallProduct(product *service.Product) *ProductModel <span class="cov8" title="1">{
+        return &amp;ProductModel{
+                Name:        product.Name,
+                Description: product.Description,
+                Price:       product.Price,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package handlers
+
+import (
+        "context"
+        "log"
+
+        pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
+)
+
+func (s *GRPCServer) HealthCheck(ctx context.Context, in *pb.HealthCheckRequest) (*pb.HealthCheckResponse, error) <span class="cov8" title="1">{
+
+        log.Printf("Received: Health check request")
+
+        return &amp;pb.HealthCheckResponse{
+                Status: "OK",
+        }, nil
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package handlers
+
+import (
+        "context"
+        "fmt"
+        "log"
+
+        pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
+        "github.com/Mik3y-F/order-management-system/orders/internal/service"
+)
+
+func (s *GRPCServer) CreateProduct(ctx context.Context, in *pb.CreateProductRequest) (*pb.CreateProductResponse, error) <span class="cov8" title="1">{
+
+        log.Printf("Received: %v", in.GetName())
+
+        p, err := s.ProductService.CreateProduct(ctx, &amp;service.Product{
+                Name:        in.GetName(),
+                Description: in.GetDescription(),
+                Price:       in.GetPrice(),
+        })
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to create product: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;pb.CreateProductResponse{
+                Id: p.Id,
+        }, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package handlers
+
+import (
+        "context"
+        "fmt"
+        "log"
+        "net"
+        "sync"
+
+        pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
+        "github.com/Mik3y-F/order-management-system/orders/internal/service"
+        "google.golang.org/grpc"
+)
+
+// GRPCServer struct represents the GRPC server for the order management system.
+type GRPCServer struct {
+        pb.UnimplementedOrdersServer
+
+        ProductService service.ProductService
+
+        grpcServer *grpc.Server
+        mu         sync.Mutex // synchronizes access to the grpcServer
+}
+
+// NewGRPCServer creates a new instance of GRPCServer.
+func NewGRPCServer() *GRPCServer <span class="cov8" title="1">{
+        return &amp;GRPCServer{}
+}</span>
+
+// Run starts the GRPC server on the specified bind address and port.
+func (s *GRPCServer) Run(ctx context.Context, bindAddress string, port string) error <span class="cov8" title="1">{
+        lis, err := net.Listen("tcp", bindAddress+":"+port)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("failed to listen: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">s.mu.Lock()
+        s.grpcServer = grpc.NewServer()
+        s.mu.Unlock()
+
+        pb.RegisterOrdersServer(s.grpcServer, s)
+
+        go func() </span><span class="cov8" title="1">{
+                if err := s.grpcServer.Serve(lis); err != nil </span><span class="cov0" title="0">{
+                        log.Fatalf("Failed to serve: %v", err)
+                }</span>
+        }()
+
+        <span class="cov8" title="1">log.Printf("Starting server on port %v", lis.Addr())
+
+        // Listen for context cancellation
+        &lt;-ctx.Done()
+
+        // If context is cancelled, stop the server
+        s.Stop()
+
+        return nil</span>
+}
+
+// Stop gracefully stops the GRPC server.
+func (s *GRPCServer) Stop() <span class="cov8" title="1">{
+        s.mu.Lock()
+        defer s.mu.Unlock()
+
+        if s.grpcServer != nil </span><span class="cov8" title="1">{
+                s.grpcServer.GracefulStop()
+        }</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
