@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -27,7 +28,7 @@ func NewGRPCServer() *GRPCServer {
 }
 
 // Run starts the GRPC server on the specified bind address and port.
-func (s *GRPCServer) Run(bindAddress string, port string) error {
+func (s *GRPCServer) Run(ctx context.Context, bindAddress string, port string) error {
 	lis, err := net.Listen("tcp", bindAddress+":"+port)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %v", err)
@@ -52,4 +53,12 @@ func (s *GRPCServer) Stop() {
 	if s.grpcServer != nil {
 		s.grpcServer.GracefulStop()
 	}
+}
+
+// IsRunning checks if the GRPC server is running.
+func (s *GRPCServer) IsRunning() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.grpcServer != nil
 }

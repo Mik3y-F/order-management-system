@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"testing"
@@ -59,9 +60,11 @@ func TestGRPCServer_Run(t *testing.T) {
 			server := handlers.NewGRPCServer()
 			errCh := make(chan error)
 
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+
 			go func() {
-				errCh <- server.Run(tt.bindAddr, tt.port)
-				defer server.Stop()
+				errCh <- server.Run(ctx, tt.bindAddr, tt.port)
 			}()
 
 			// Wait for server to respond or timeout after a specified time
@@ -70,12 +73,13 @@ func TestGRPCServer_Run(t *testing.T) {
 				if (err != nil) != tt.wantErr {
 					t.Errorf("GRPCServer.Run() error = %v, wantErr %v", err, tt.wantErr)
 				}
-			case <-time.After(1 * time.Second): // increase timeout to 5 seconds
-				// if we got to here, then there was no error from server, this is good for valid port.
+			case <-time.After(2 * time.Second):
 				if tt.wantErr {
 					t.Errorf("GRPCServer.Run() expected error for port %v, but got none", tt.port)
 				}
 			}
+
+			server.Stop()
 		})
 	}
 }

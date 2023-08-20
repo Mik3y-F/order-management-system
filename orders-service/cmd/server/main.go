@@ -47,7 +47,7 @@ func main() {
 
 	s.ProductService = productService
 
-	if err := s.Run(bindAddress, port); err != nil {
+	if err := s.Run(ctx, bindAddress, port); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }
