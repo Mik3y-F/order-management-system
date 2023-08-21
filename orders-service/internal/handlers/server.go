@@ -16,10 +16,12 @@ import (
 type GRPCServer struct {
 	pb.UnimplementedOrdersServer
 
-	ProductService service.ProductService
-
 	grpcServer *grpc.Server
 	mu         sync.Mutex // synchronizes access to the grpcServer
+
+	// Internal services
+	ProductService  service.ProductService
+	CustomerService service.CustomerService
 }
 
 // NewGRPCServer creates a new instance of GRPCServer.
