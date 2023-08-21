@@ -10,6 +10,13 @@ import (
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
 )
 
+func deleteTestProduct(t *testing.T, ctx context.Context, productService service.ProductService, id string) {
+	err := productService.DeleteProduct(ctx, id)
+	if err != nil {
+		t.Fatalf("failed to delete product: %v", err)
+	}
+}
+
 func TestProductService_CheckPreconditions(t *testing.T) {
 	type fields struct {
 		db *db.FirestoreService
@@ -92,6 +99,9 @@ func TestProductService_CreateProduct(t *testing.T) {
 				t.Errorf("ProductService.CreateProduct() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			// Clean up the created product
+			defer deleteTestProduct(t, ctx, productService, got.Id)
+
 			// Ignore the ID in the comparison since it's unpredictable
 			got.Id = ""
 			tt.want.Id = ""
@@ -125,6 +135,7 @@ func TestProductService_GetProduct(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create product: %v", err)
 	}
+	defer deleteTestProduct(t, ctx, productService, p.Id)
 
 	type args struct {
 		ctx context.Context
@@ -184,6 +195,8 @@ func TestProductService_ListProducts(t *testing.T) {
 		t.Fatalf("failed to create product: %v", err)
 	}
 
+	defer deleteTestProduct(t, ctx, productService, p.Id)
+
 	type args struct {
 		ctx context.Context
 	}
@@ -239,6 +252,8 @@ func TestProductService_UpdateProduct(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create product: %v", err)
 	}
+
+	defer deleteTestProduct(t, ctx, productService, p.Id)
 
 	type args struct {
 		ctx    context.Context
@@ -309,6 +324,7 @@ func TestProductService_DeleteProduct(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create product: %v", err)
 	}
+	defer deleteTestProduct(t, ctx, productService, p.Id)
 
 	type args struct {
 		ctx context.Context
