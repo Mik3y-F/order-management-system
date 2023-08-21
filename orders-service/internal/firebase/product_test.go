@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	db "github.com/Mik3y-F/order-management-system/orders/internal/firebase"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
@@ -78,6 +79,8 @@ func TestProductService_CreateProduct(t *testing.T) {
 				Name:        "Test Product",
 				Description: "Test Description",
 				Price:       100,
+				CreatedAt:   time.Now().Format(time.RFC3339),
+				UpdatedAt:   time.Now().Format(time.RFC3339),
 			},
 			wantErr: false,
 		},
@@ -264,6 +267,8 @@ func TestProductService_UpdateProduct(t *testing.T) {
 				Name:        "Updated Test Product",
 				Description: "Updated Test Description",
 				Price:       200,
+				CreatedAt:   p.CreatedAt,
+				UpdatedAt:   time.Now().Format(time.RFC3339),
 			},
 			wantErr: false,
 		},

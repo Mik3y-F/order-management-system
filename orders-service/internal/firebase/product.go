@@ -2,6 +2,7 @@ package firebase
 
 import (
 	"context"
+	"time"
 
 	"cloud.google.com/go/firestore"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
@@ -34,6 +35,12 @@ func (s *ProductService) productCollection() *firestore.CollectionRef {
 
 func (s *ProductService) CreateProduct(ctx context.Context, product *service.Product) (*service.Product, error) {
 	s.CheckPreconditions()
+
+	// Set CreatedAt and UpdatedAt to the current time
+	currentTime := time.Now()
+
+	product.CreatedAt = currentTime.Format(time.RFC3339)
+	product.UpdatedAt = currentTime.Format(time.RFC3339)
 
 	productModel := s.marshallProduct(product)
 
@@ -110,6 +117,9 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id string, update *s
 	product.Description = update.Description
 	product.Price = update.Price
 
+	timeNow := time.Now()
+	product.UpdatedAt = timeNow.Format(time.RFC3339)
+
 	productModel := s.marshallProduct(product)
 
 	_, writeErr := s.productCollection().Doc(id).Set(ctx, productModel)
@@ -130,6 +140,8 @@ func (s *ProductService) marshallProduct(product *service.Product) *ProductModel
 		Name:        product.Name,
 		Description: product.Description,
 		Price:       product.Price,
+		CreatedAt:   product.CreatedAt,
+		UpdatedAt:   product.UpdatedAt,
 	}
 }
 
