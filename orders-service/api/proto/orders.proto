@@ -9,11 +9,19 @@ import "google/protobuf/timestamp.proto";
 service Orders {
     rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse) {}
 
+    // Products
     rpc CreateProduct (CreateProductRequest) returns (CreateProductResponse) {}
     rpc GetProduct (GetProductRequest) returns (GetProductResponse) {}
     rpc ListProducts (ListProductsRequest) returns (ListProductsResponse) {}
     rpc UpdateProduct (UpdateProductRequest) returns (UpdateProductResponse) {}
     rpc DeleteProduct (DeleteProductRequest) returns (DeleteProductResponse) {}
+
+    // Customers
+    rpc CreateCustomer (CreateCustomerRequest) returns (CreateCustomerResponse) {}
+    rpc GetCustomer (GetCustomerRequest) returns (GetCustomerResponse) {}
+    rpc ListCustomers (ListCustomersRequest) returns (ListCustomersResponse) {}
+    rpc UpdateCustomer (UpdateCustomerRequest) returns (UpdateCustomerResponse) {}
+    rpc DeleteCustomer (DeleteCustomerRequest) returns (DeleteCustomerResponse) {}
 
 }
 
@@ -89,6 +97,74 @@ message DeleteProductRequest {
 }
 
 message DeleteProductResponse {
+    string id = 1;
+}
+
+message Customer {
+    string id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string email = 4;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+}
+
+message CreateCustomerRequest {
+    string first_name = 1;
+    string last_name = 2;
+    string email = 3;
+    google.protobuf.Timestamp created_at = 5;
+    google.protobuf.Timestamp updated_at = 6;
+}
+
+message CreateCustomerResponse {
+    string id = 1;
+}
+
+message GetCustomerRequest {
+    string id = 1;
+}
+
+message GetCustomerResponse {
+    string id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string email = 4;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+}
+
+message ListCustomersRequest {}
+
+message ListCustomersResponse {
+    repeated Customer customers = 1;
+}
+
+message CustomerUpdate {
+    string first_name = 1;
+    string last_name = 2;
+    string email = 3;
+}
+
+message UpdateCustomerRequest {
+    string id = 1;
+    CustomerUpdate update = 2;
+}
+
+message UpdateCustomerResponse {
+    string id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string email = 4;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+}
+
+message DeleteCustomerRequest {
+    string id = 1;
+}
+
+message DeleteCustomerResponse {
     string id = 1;
 }
 

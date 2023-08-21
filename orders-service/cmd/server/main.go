@@ -43,9 +43,12 @@ func main() {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
+
 	productService := db.NewProductService(firestoreService)
+	customerService := db.NewCustomerService(firestoreService)
 
 	s.ProductService = productService
+	s.CustomerService = customerService
 
 	if err := s.Run(ctx, bindAddress, port); err != nil {
 		log.Fatalf("failed to serve: %v", err)
