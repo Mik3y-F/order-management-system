@@ -10,6 +10,11 @@ service Orders {
     rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse) {}
 
     rpc CreateProduct (CreateProductRequest) returns (CreateProductResponse) {}
+    rpc GetProduct (GetProductRequest) returns (GetProductResponse) {}
+    rpc ListProducts (ListProductsRequest) returns (ListProductsResponse) {}
+    rpc UpdateProduct (UpdateProductRequest) returns (UpdateProductResponse) {}
+    rpc DeleteProduct (DeleteProductRequest) returns (DeleteProductResponse) {}
+
 }
 
 message HealthCheckRequest {}
@@ -18,15 +23,72 @@ message HealthCheckResponse {
     string status = 1;
 }
 
+message Product {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    float price = 4;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+}
+
 message CreateProductRequest {
     string name = 1;
     string description = 2;
     float price = 3;
-    int32 stock = 4;
     google.protobuf.Timestamp created_at = 5;
     google.protobuf.Timestamp updated_at = 6;
 }
 
+
 message CreateProductResponse {
     string id = 1;
 }
+
+message GetProductRequest {
+    string id = 1;
+}
+
+message GetProductResponse {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    float price = 4;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+}
+
+message ListProductsRequest {}
+
+message ListProductsResponse {
+    repeated Product products = 1;
+}
+
+message ProductUpdate {
+    string name = 1;
+    string description = 2;
+    float price = 3;
+}
+
+message UpdateProductRequest {
+    string id = 1;
+    ProductUpdate update = 2;
+}
+
+message UpdateProductResponse {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    float price = 4;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+}
+
+message DeleteProductRequest {
+    string id = 1;
+}
+
+message DeleteProductResponse {
+    string id = 1;
+}
+
