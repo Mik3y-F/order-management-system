@@ -7,11 +7,20 @@ type Product struct {
 	Name        string
 	Description string
 	Price       float32
-	Stock       int32
 	CreatedAt   string
 	UpdatedAt   string
 }
 
+type ProductUpdate struct {
+	Name        string
+	Description string
+	Price       float32
+}
+
 type ProductService interface {
 	CreateProduct(ctx context.Context, product *Product) (*Product, error)
+	GetProduct(ctx context.Context, id string) (*Product, error)
+	ListProducts(ctx context.Context) ([]*Product, error)
+	UpdateProduct(ctx context.Context, id string, update *ProductUpdate) (*Product, error)
+	DeleteProduct(ctx context.Context, id string) error
 }
