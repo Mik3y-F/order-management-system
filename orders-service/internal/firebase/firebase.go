@@ -5,7 +5,7 @@ import (
 	"log"
 
 	firebase "firebase.google.com/go"
-	pkg "github.com/Mik3y-F/order-management-system/orders/pkg"
+	pkg "github.com/Mik3y-F/order-management-system/pkg"
 )
 
 const (

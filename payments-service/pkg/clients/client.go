@@ -12,20 +12,20 @@ import (
 type HealthCheckRequest = pb.HealthCheckRequest
 type HealthCheckResponse = pb.HealthCheckResponse
 
-type OrdersClient interface {
+type PaymentsClient interface {
 	HealthCheck(ctx context.Context, product *HealthCheckRequest) (*HealthCheckResponse, error)
 }
 
-type GrpcOrderClient struct {
+type GrpcPaymentsClient struct {
 	conn   *grpc.ClientConn
-	client pb.OrdersClient
+	client pb.PaymentsClient
 }
 
-func NewGrpcOrderClient(conn *grpc.ClientConn) *GrpcOrderClient {
+func NewGrpcPaymentsClient(conn *grpc.ClientConn) *GrpcPaymentsClient {
 
-	client := pb.NewOrdersClient(conn)
+	client := pb.NewPaymentsClient(conn)
 
-	return &GrpcOrderClient{
+	return &GrpcPaymentsClient{
 		conn:   conn,
 		client: client,
 	}

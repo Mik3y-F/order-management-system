@@ -1,11 +1,13 @@
 syntax = "proto3";
 
-package orders;
+package payments;
 
 option go_package = "github.com/Mik3y-F/order-management-system/payments";
 
-service Orders {
+service Payments {
     rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse) {}
+
+    rpc ProcessMpesaPayment (MpesaPaymentRequest) returns (MpesaPaymentResponse);
 }
 
 message HealthCheckRequest {}
@@ -13,3 +15,22 @@ message HealthCheckRequest {}
 message HealthCheckResponse {
     string status = 1;
 }
+
+message MpesaPaymentRequest {
+    string orderId = 1;
+    string customerId = 2;
+    uint32 amount = 3;
+    uint64 phoneNumber = 4;
+    string callbackUrl = 5;
+    string reference = 6;
+    string description = 7;
+}
+
+message MpesaPaymentResponse {
+    string checkoutRequestId = 1;
+    string merchantRequestId = 2;
+    string customerMessage = 3;
+    string responseCode = 4;
+}
+
+

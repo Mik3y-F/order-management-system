@@ -4,7 +4,7 @@
 // - protoc             v4.23.4
 // source: payments.proto
 
-package orders
+package payments
 
 import (
 	context "context"
@@ -18,86 +18,122 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// OrdersClient is the client API for Orders service.
+// PaymentsClient is the client API for Payments service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type OrdersClient interface {
+type PaymentsClient interface {
 	HealthCheck(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error)
+	ProcessMpesaPayment(ctx context.Context, in *MpesaPaymentRequest, opts ...grpc.CallOption) (*MpesaPaymentResponse, error)
 }
 
-type ordersClient struct {
+type paymentsClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewOrdersClient(cc grpc.ClientConnInterface) OrdersClient {
-	return &ordersClient{cc}
+func NewPaymentsClient(cc grpc.ClientConnInterface) PaymentsClient {
+	return &paymentsClient{cc}
 }
 
-func (c *ordersClient) HealthCheck(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error) {
+func (c *paymentsClient) HealthCheck(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error) {
 	out := new(HealthCheckResponse)
-	err := c.cc.Invoke(ctx, "/orders.Orders/HealthCheck", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/payments.Payments/HealthCheck", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// OrdersServer is the server API for Orders service.
-// All implementations must embed UnimplementedOrdersServer
+func (c *paymentsClient) ProcessMpesaPayment(ctx context.Context, in *MpesaPaymentRequest, opts ...grpc.CallOption) (*MpesaPaymentResponse, error) {
+	out := new(MpesaPaymentResponse)
+	err := c.cc.Invoke(ctx, "/payments.Payments/ProcessMpesaPayment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// PaymentsServer is the server API for Payments service.
+// All implementations must embed UnimplementedPaymentsServer
 // for forward compatibility
-type OrdersServer interface {
+type PaymentsServer interface {
 	HealthCheck(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error)
-	mustEmbedUnimplementedOrdersServer()
+	ProcessMpesaPayment(context.Context, *MpesaPaymentRequest) (*MpesaPaymentResponse, error)
+	mustEmbedUnimplementedPaymentsServer()
 }
 
-// UnimplementedOrdersServer must be embedded to have forward compatible implementations.
-type UnimplementedOrdersServer struct {
+// UnimplementedPaymentsServer must be embedded to have forward compatible implementations.
+type UnimplementedPaymentsServer struct {
 }
 
-func (UnimplementedOrdersServer) HealthCheck(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error) {
+func (UnimplementedPaymentsServer) HealthCheck(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HealthCheck not implemented")
 }
-func (UnimplementedOrdersServer) mustEmbedUnimplementedOrdersServer() {}
+func (UnimplementedPaymentsServer) ProcessMpesaPayment(context.Context, *MpesaPaymentRequest) (*MpesaPaymentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessMpesaPayment not implemented")
+}
+func (UnimplementedPaymentsServer) mustEmbedUnimplementedPaymentsServer() {}
 
-// UnsafeOrdersServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to OrdersServer will
+// UnsafePaymentsServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to PaymentsServer will
 // result in compilation errors.
-type UnsafeOrdersServer interface {
-	mustEmbedUnimplementedOrdersServer()
+type UnsafePaymentsServer interface {
+	mustEmbedUnimplementedPaymentsServer()
 }
 
-func RegisterOrdersServer(s grpc.ServiceRegistrar, srv OrdersServer) {
-	s.RegisterService(&Orders_ServiceDesc, srv)
+func RegisterPaymentsServer(s grpc.ServiceRegistrar, srv PaymentsServer) {
+	s.RegisterService(&Payments_ServiceDesc, srv)
 }
 
-func _Orders_HealthCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Payments_HealthCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HealthCheckRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(OrdersServer).HealthCheck(ctx, in)
+		return srv.(PaymentsServer).HealthCheck(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/orders.Orders/HealthCheck",
+		FullMethod: "/payments.Payments/HealthCheck",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrdersServer).HealthCheck(ctx, req.(*HealthCheckRequest))
+		return srv.(PaymentsServer).HealthCheck(ctx, req.(*HealthCheckRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Orders_ServiceDesc is the grpc.ServiceDesc for Orders service.
+func _Payments_ProcessMpesaPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MpesaPaymentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentsServer).ProcessMpesaPayment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/payments.Payments/ProcessMpesaPayment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentsServer).ProcessMpesaPayment(ctx, req.(*MpesaPaymentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Payments_ServiceDesc is the grpc.ServiceDesc for Payments service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Orders_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "orders.Orders",
-	HandlerType: (*OrdersServer)(nil),
+var Payments_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "payments.Payments",
+	HandlerType: (*PaymentsServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "HealthCheck",
-			Handler:    _Orders_HealthCheck_Handler,
+			Handler:    _Payments_HealthCheck_Handler,
+		},
+		{
+			MethodName: "ProcessMpesaPayment",
+			Handler:    _Payments_ProcessMpesaPayment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

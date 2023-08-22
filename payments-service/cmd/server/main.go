@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -8,6 +9,8 @@ import (
 )
 
 func main() {
+
+	ctx := context.Background()
 
 	log.Printf("Starting server")
 
@@ -22,7 +25,7 @@ func main() {
 	}
 
 	s := handlers.NewGRPCServer()
-	if err := s.Run(bindAddress, port); err != nil {
+	if err := s.Run(ctx, bindAddress, port); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }
