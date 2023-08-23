@@ -19,6 +19,7 @@ func (s *GRPCServer) CreateCustomer(
 		FirstName: in.GetFirstName(),
 		LastName:  in.GetLastName(),
 		Email:     in.GetEmail(),
+		Phone:     in.GetPhone(),
 	})
 	if err != nil {
 		return nil, Error(fmt.Errorf("failed to create customer: %w", err))
@@ -43,6 +44,7 @@ func (s *GRPCServer) GetCustomer(
 		Id:        p.Id,
 		FirstName: p.FirstName,
 		LastName:  p.LastName,
+		Phone:     p.Phone,
 		Email:     p.Email,
 	}, nil
 }
@@ -63,6 +65,7 @@ func (s *GRPCServer) ListCustomers(
 			Id:        p.Id,
 			FirstName: p.FirstName,
 			LastName:  p.LastName,
+			Phone:     p.Phone,
 			Email:     p.Email,
 		})
 	}
