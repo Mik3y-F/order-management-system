@@ -35,6 +35,18 @@ type OrdersClient interface {
 	ListCustomers(ctx context.Context, in *ListCustomersRequest, opts ...grpc.CallOption) (*ListCustomersResponse, error)
 	UpdateCustomer(ctx context.Context, in *UpdateCustomerRequest, opts ...grpc.CallOption) (*UpdateCustomerResponse, error)
 	DeleteCustomer(ctx context.Context, in *DeleteCustomerRequest, opts ...grpc.CallOption) (*DeleteCustomerResponse, error)
+	// Orders
+	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*CreateOrderResponse, error)
+	GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*GetOrderResponse, error)
+	ListOrders(ctx context.Context, in *ListOrdersRequest, opts ...grpc.CallOption) (*ListOrdersResponse, error)
+	DeleteOrder(ctx context.Context, in *DeleteOrderRequest, opts ...grpc.CallOption) (*DeleteOrderResponse, error)
+	ProcessCheckout(ctx context.Context, in *ProcessCheckoutRequest, opts ...grpc.CallOption) (*ProcessCheckoutResponse, error)
+	// Order Items
+	CreateOrderItem(ctx context.Context, in *CreateOrderItemRequest, opts ...grpc.CallOption) (*CreateOrderItemResponse, error)
+	GetOrderItem(ctx context.Context, in *GetOrderItemRequest, opts ...grpc.CallOption) (*GetOrderItemResponse, error)
+	ListOrderItems(ctx context.Context, in *ListOrderItemsRequest, opts ...grpc.CallOption) (*ListOrderItemsResponse, error)
+	UpdateOrderItem(ctx context.Context, in *UpdateOrderItemRequest, opts ...grpc.CallOption) (*UpdateOrderItemResponse, error)
+	DeleteOrderItem(ctx context.Context, in *DeleteOrderItemRequest, opts ...grpc.CallOption) (*DeleteOrderItemResponse, error)
 }
 
 type ordersClient struct {
@@ -144,6 +156,96 @@ func (c *ordersClient) DeleteCustomer(ctx context.Context, in *DeleteCustomerReq
 	return out, nil
 }
 
+func (c *ordersClient) CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*CreateOrderResponse, error) {
+	out := new(CreateOrderResponse)
+	err := c.cc.Invoke(ctx, "/orders.Orders/CreateOrder", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordersClient) GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*GetOrderResponse, error) {
+	out := new(GetOrderResponse)
+	err := c.cc.Invoke(ctx, "/orders.Orders/GetOrder", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordersClient) ListOrders(ctx context.Context, in *ListOrdersRequest, opts ...grpc.CallOption) (*ListOrdersResponse, error) {
+	out := new(ListOrdersResponse)
+	err := c.cc.Invoke(ctx, "/orders.Orders/ListOrders", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordersClient) DeleteOrder(ctx context.Context, in *DeleteOrderRequest, opts ...grpc.CallOption) (*DeleteOrderResponse, error) {
+	out := new(DeleteOrderResponse)
+	err := c.cc.Invoke(ctx, "/orders.Orders/DeleteOrder", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordersClient) ProcessCheckout(ctx context.Context, in *ProcessCheckoutRequest, opts ...grpc.CallOption) (*ProcessCheckoutResponse, error) {
+	out := new(ProcessCheckoutResponse)
+	err := c.cc.Invoke(ctx, "/orders.Orders/ProcessCheckout", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordersClient) CreateOrderItem(ctx context.Context, in *CreateOrderItemRequest, opts ...grpc.CallOption) (*CreateOrderItemResponse, error) {
+	out := new(CreateOrderItemResponse)
+	err := c.cc.Invoke(ctx, "/orders.Orders/CreateOrderItem", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordersClient) GetOrderItem(ctx context.Context, in *GetOrderItemRequest, opts ...grpc.CallOption) (*GetOrderItemResponse, error) {
+	out := new(GetOrderItemResponse)
+	err := c.cc.Invoke(ctx, "/orders.Orders/GetOrderItem", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordersClient) ListOrderItems(ctx context.Context, in *ListOrderItemsRequest, opts ...grpc.CallOption) (*ListOrderItemsResponse, error) {
+	out := new(ListOrderItemsResponse)
+	err := c.cc.Invoke(ctx, "/orders.Orders/ListOrderItems", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordersClient) UpdateOrderItem(ctx context.Context, in *UpdateOrderItemRequest, opts ...grpc.CallOption) (*UpdateOrderItemResponse, error) {
+	out := new(UpdateOrderItemResponse)
+	err := c.cc.Invoke(ctx, "/orders.Orders/UpdateOrderItem", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ordersClient) DeleteOrderItem(ctx context.Context, in *DeleteOrderItemRequest, opts ...grpc.CallOption) (*DeleteOrderItemResponse, error) {
+	out := new(DeleteOrderItemResponse)
+	err := c.cc.Invoke(ctx, "/orders.Orders/DeleteOrderItem", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrdersServer is the server API for Orders service.
 // All implementations must embed UnimplementedOrdersServer
 // for forward compatibility
@@ -161,6 +263,18 @@ type OrdersServer interface {
 	ListCustomers(context.Context, *ListCustomersRequest) (*ListCustomersResponse, error)
 	UpdateCustomer(context.Context, *UpdateCustomerRequest) (*UpdateCustomerResponse, error)
 	DeleteCustomer(context.Context, *DeleteCustomerRequest) (*DeleteCustomerResponse, error)
+	// Orders
+	CreateOrder(context.Context, *CreateOrderRequest) (*CreateOrderResponse, error)
+	GetOrder(context.Context, *GetOrderRequest) (*GetOrderResponse, error)
+	ListOrders(context.Context, *ListOrdersRequest) (*ListOrdersResponse, error)
+	DeleteOrder(context.Context, *DeleteOrderRequest) (*DeleteOrderResponse, error)
+	ProcessCheckout(context.Context, *ProcessCheckoutRequest) (*ProcessCheckoutResponse, error)
+	// Order Items
+	CreateOrderItem(context.Context, *CreateOrderItemRequest) (*CreateOrderItemResponse, error)
+	GetOrderItem(context.Context, *GetOrderItemRequest) (*GetOrderItemResponse, error)
+	ListOrderItems(context.Context, *ListOrderItemsRequest) (*ListOrderItemsResponse, error)
+	UpdateOrderItem(context.Context, *UpdateOrderItemRequest) (*UpdateOrderItemResponse, error)
+	DeleteOrderItem(context.Context, *DeleteOrderItemRequest) (*DeleteOrderItemResponse, error)
 	mustEmbedUnimplementedOrdersServer()
 }
 
@@ -200,6 +314,36 @@ func (UnimplementedOrdersServer) UpdateCustomer(context.Context, *UpdateCustomer
 }
 func (UnimplementedOrdersServer) DeleteCustomer(context.Context, *DeleteCustomerRequest) (*DeleteCustomerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteCustomer not implemented")
+}
+func (UnimplementedOrdersServer) CreateOrder(context.Context, *CreateOrderRequest) (*CreateOrderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateOrder not implemented")
+}
+func (UnimplementedOrdersServer) GetOrder(context.Context, *GetOrderRequest) (*GetOrderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrder not implemented")
+}
+func (UnimplementedOrdersServer) ListOrders(context.Context, *ListOrdersRequest) (*ListOrdersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListOrders not implemented")
+}
+func (UnimplementedOrdersServer) DeleteOrder(context.Context, *DeleteOrderRequest) (*DeleteOrderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteOrder not implemented")
+}
+func (UnimplementedOrdersServer) ProcessCheckout(context.Context, *ProcessCheckoutRequest) (*ProcessCheckoutResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessCheckout not implemented")
+}
+func (UnimplementedOrdersServer) CreateOrderItem(context.Context, *CreateOrderItemRequest) (*CreateOrderItemResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateOrderItem not implemented")
+}
+func (UnimplementedOrdersServer) GetOrderItem(context.Context, *GetOrderItemRequest) (*GetOrderItemResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrderItem not implemented")
+}
+func (UnimplementedOrdersServer) ListOrderItems(context.Context, *ListOrderItemsRequest) (*ListOrderItemsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListOrderItems not implemented")
+}
+func (UnimplementedOrdersServer) UpdateOrderItem(context.Context, *UpdateOrderItemRequest) (*UpdateOrderItemResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateOrderItem not implemented")
+}
+func (UnimplementedOrdersServer) DeleteOrderItem(context.Context, *DeleteOrderItemRequest) (*DeleteOrderItemResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteOrderItem not implemented")
 }
 func (UnimplementedOrdersServer) mustEmbedUnimplementedOrdersServer() {}
 
@@ -412,6 +556,186 @@ func _Orders_DeleteCustomer_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Orders_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdersServer).CreateOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/orders.Orders/CreateOrder",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdersServer).CreateOrder(ctx, req.(*CreateOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orders_GetOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdersServer).GetOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/orders.Orders/GetOrder",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdersServer).GetOrder(ctx, req.(*GetOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orders_ListOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdersServer).ListOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/orders.Orders/ListOrders",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdersServer).ListOrders(ctx, req.(*ListOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orders_DeleteOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdersServer).DeleteOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/orders.Orders/DeleteOrder",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdersServer).DeleteOrder(ctx, req.(*DeleteOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orders_ProcessCheckout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessCheckoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdersServer).ProcessCheckout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/orders.Orders/ProcessCheckout",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdersServer).ProcessCheckout(ctx, req.(*ProcessCheckoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orders_CreateOrderItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateOrderItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdersServer).CreateOrderItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/orders.Orders/CreateOrderItem",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdersServer).CreateOrderItem(ctx, req.(*CreateOrderItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orders_GetOrderItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrderItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdersServer).GetOrderItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/orders.Orders/GetOrderItem",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdersServer).GetOrderItem(ctx, req.(*GetOrderItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orders_ListOrderItems_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListOrderItemsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdersServer).ListOrderItems(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/orders.Orders/ListOrderItems",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdersServer).ListOrderItems(ctx, req.(*ListOrderItemsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orders_UpdateOrderItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateOrderItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdersServer).UpdateOrderItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/orders.Orders/UpdateOrderItem",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdersServer).UpdateOrderItem(ctx, req.(*UpdateOrderItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Orders_DeleteOrderItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteOrderItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrdersServer).DeleteOrderItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/orders.Orders/DeleteOrderItem",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrdersServer).DeleteOrderItem(ctx, req.(*DeleteOrderItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Orders_ServiceDesc is the grpc.ServiceDesc for Orders service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -462,6 +786,46 @@ var Orders_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteCustomer",
 			Handler:    _Orders_DeleteCustomer_Handler,
+		},
+		{
+			MethodName: "CreateOrder",
+			Handler:    _Orders_CreateOrder_Handler,
+		},
+		{
+			MethodName: "GetOrder",
+			Handler:    _Orders_GetOrder_Handler,
+		},
+		{
+			MethodName: "ListOrders",
+			Handler:    _Orders_ListOrders_Handler,
+		},
+		{
+			MethodName: "DeleteOrder",
+			Handler:    _Orders_DeleteOrder_Handler,
+		},
+		{
+			MethodName: "ProcessCheckout",
+			Handler:    _Orders_ProcessCheckout_Handler,
+		},
+		{
+			MethodName: "CreateOrderItem",
+			Handler:    _Orders_CreateOrderItem_Handler,
+		},
+		{
+			MethodName: "GetOrderItem",
+			Handler:    _Orders_GetOrderItem_Handler,
+		},
+		{
+			MethodName: "ListOrderItems",
+			Handler:    _Orders_ListOrderItems_Handler,
+		},
+		{
+			MethodName: "UpdateOrderItem",
+			Handler:    _Orders_UpdateOrderItem_Handler,
+		},
+		{
+			MethodName: "DeleteOrderItem",
+			Handler:    _Orders_DeleteOrderItem_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

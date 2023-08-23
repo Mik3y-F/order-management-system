@@ -16,7 +16,7 @@ func (s *GRPCServer) CreateProduct(ctx context.Context, in *pb.CreateProductRequ
 	p, err := s.ProductService.CreateProduct(ctx, &service.Product{
 		Name:        in.GetName(),
 		Description: in.GetDescription(),
-		Price:       in.GetPrice(),
+		Price:       uint(in.GetPrice()),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create product: %w", err)
@@ -40,7 +40,7 @@ func (s *GRPCServer) GetProduct(ctx context.Context, in *pb.GetProductRequest) (
 		Id:          p.Id,
 		Name:        p.Name,
 		Description: p.Description,
-		Price:       p.Price,
+		Price:       uint32(p.Price),
 	}, nil
 }
 
@@ -59,7 +59,7 @@ func (s *GRPCServer) ListProducts(ctx context.Context, in *pb.ListProductsReques
 			Id:          p.Id,
 			Name:        p.Name,
 			Description: p.Description,
-			Price:       p.Price,
+			Price:       uint32(p.Price),
 		})
 	}
 
@@ -75,7 +75,7 @@ func (s *GRPCServer) UpdateProduct(ctx context.Context, in *pb.UpdateProductRequ
 	p, err := s.ProductService.UpdateProduct(ctx, in.GetId(), &service.ProductUpdate{
 		Name:        in.GetUpdate().GetName(),
 		Description: in.GetUpdate().GetDescription(),
-		Price:       in.GetUpdate().GetPrice(),
+		Price:       uint(in.GetUpdate().GetPrice()),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update product: %w", err)
@@ -85,7 +85,7 @@ func (s *GRPCServer) UpdateProduct(ctx context.Context, in *pb.UpdateProductRequ
 		Id:          p.Id,
 		Name:        p.Name,
 		Description: p.Description,
-		Price:       p.Price,
+		Price:       uint32(p.Price),
 	}, nil
 }
 

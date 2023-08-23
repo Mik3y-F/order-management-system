@@ -6,7 +6,7 @@ type Product struct {
 	Id          string
 	Name        string
 	Description string
-	Price       float32
+	Price       uint
 	CreatedAt   string
 	UpdatedAt   string
 }
@@ -14,7 +14,7 @@ type Product struct {
 type ProductUpdate struct {
 	Name        string
 	Description string
-	Price       float32
+	Price       uint
 }
 
 type ProductService interface {
