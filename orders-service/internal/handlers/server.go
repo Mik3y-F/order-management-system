@@ -22,6 +22,7 @@ type GRPCServer struct {
 	// Internal services
 	ProductService  service.ProductService
 	CustomerService service.CustomerService
+	OrderService    service.OrderService
 }
 
 // NewGRPCServer creates a new instance of GRPCServer.
