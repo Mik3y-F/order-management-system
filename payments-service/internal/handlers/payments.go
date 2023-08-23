@@ -19,7 +19,7 @@ func (s *GRPCServer) ProcessPayment(ctx context.Context, in *pb.MpesaPaymentRequ
 		Description: in.GetDescription(),
 	})
 	if err != nil {
-		return nil, err
+		return nil, Error(err)
 	}
 
 	return &pb.MpesaPaymentResponse{

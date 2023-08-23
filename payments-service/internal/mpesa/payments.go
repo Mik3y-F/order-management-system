@@ -55,7 +55,7 @@ func (s *PaymentsService) ProcessPayment(ctx context.Context, payment *service.P
 		TransactionDesc:   payment.Description,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to process payment: %v", err)
+		return nil, fmt.Errorf("failed to process payment: %v", MpesaErrorToInternalError(err))
 	}
 
 	return &service.PaymentResponse{
