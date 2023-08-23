@@ -10,6 +10,18 @@ type OrderItem struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
+func (o *OrderItem) Validate() error {
+	if o.ProductId == "" {
+		return Errorf(INVALID_ERROR, "product_id is required")
+	}
+
+	if o.Quantity == 0 {
+		return Errorf(INVALID_ERROR, "quantity is required")
+	}
+
+	return nil
+}
+
 type OrderItemUpdate struct {
 	Quantity *uint `json:"quantity"`
 }
@@ -30,6 +42,25 @@ type Order struct {
 	OrderStatus OrderStatus  `json:"order_status"`
 	CreatedAt   string       `json:"created_at"`
 	UpdatedAt   string       `json:"updated_at"`
+}
+
+func (o *Order) Validate() error {
+	if o.CustomerId == "" {
+		return Errorf(INVALID_ERROR, "customer_id is required")
+	}
+
+	if len(o.Items) == 0 {
+		return Errorf(INVALID_ERROR, "items are required")
+	}
+
+	for _, item := range o.Items {
+		err := item.Validate()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type OrderService interface {

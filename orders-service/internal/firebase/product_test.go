@@ -8,6 +8,7 @@ import (
 
 	db "github.com/Mik3y-F/order-management-system/orders/internal/firebase"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
 func deleteTestProduct(t *testing.T, ctx context.Context, productService service.ProductService, id string) {
@@ -91,6 +92,19 @@ func TestProductService_CreateProduct(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Create Product Failed - Invalid Product",
+			args: args{
+				ctx: context.Background(),
+				product: &service.Product{
+					Name:        "",
+					Description: "Test Description",
+					Price:       100,
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -99,12 +113,19 @@ func TestProductService_CreateProduct(t *testing.T) {
 				t.Errorf("ProductService.CreateProduct() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			// Clean up the created product
-			defer deleteTestProduct(t, ctx, productService, got.Id)
 
-			// Ignore the ID in the comparison since it's unpredictable
-			got.Id = ""
-			tt.want.Id = ""
+			if got != nil {
+
+				// Clean up the created product
+				defer deleteTestProduct(t, ctx, productService, got.Id)
+
+				// Ignore the ID in the comparison since it's unpredictable
+				got.Id = ""
+			}
+
+			if tt.want != nil {
+				tt.want.Id = ""
+			}
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ProductService.CreateProduct() = %v, want %v", got, tt.want)
@@ -155,6 +176,15 @@ func TestProductService_GetProduct(t *testing.T) {
 			},
 			want:    p,
 			wantErr: false,
+		},
+		{
+			name: "Get Product Failed - Invalid ID",
+			args: args{
+				ctx: context.Background(),
+				id:  "",
+			},
+			want:    nil,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -272,9 +302,9 @@ func TestProductService_UpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				id:  p.Id,
 				update: &service.ProductUpdate{
-					Name:        "Updated Test Product",
-					Description: "Updated Test Description",
-					Price:       200,
+					Name:        pkg.StringPtr("Updated Test Product"),
+					Description: pkg.StringPtr("Updated Test Description"),
+					Price:       pkg.UintPtr(200),
 				},
 			},
 			want: &service.Product{
@@ -286,6 +316,20 @@ func TestProductService_UpdateProduct(t *testing.T) {
 				UpdatedAt:   time.Now().Format(time.RFC3339),
 			},
 			wantErr: false,
+		},
+		{
+			name: "Update Product Failed - Invalid Product",
+			args: args{
+				ctx: context.Background(),
+				id:  p.Id,
+				update: &service.ProductUpdate{
+					Name:        pkg.StringPtr(""),
+					Description: pkg.StringPtr("Updated Test Description"),
+					Price:       pkg.UintPtr(200),
+				},
+			},
+			want:    nil,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -342,6 +386,14 @@ func TestProductService_DeleteProduct(t *testing.T) {
 				id:  p.Id,
 			},
 			wantErr: false,
+		},
+		{
+			name: "Delete Product Failed - Invalid ID",
+			args: args{
+				ctx: context.Background(),
+				id:  "",
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

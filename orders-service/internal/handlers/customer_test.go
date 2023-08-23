@@ -210,9 +210,9 @@ func mockUpdateCustomerFunc(ctx context.Context, id string, update *service.Cust
 	}
 	return &service.Customer{
 		Id:        "1",
-		FirstName: update.FirstName,
-		LastName:  update.LastName,
-		Email:     update.Email,
+		FirstName: *update.FirstName,
+		LastName:  *update.LastName,
+		Email:     *update.Email,
 	}, nil
 }
 

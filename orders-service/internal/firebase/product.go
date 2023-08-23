@@ -7,6 +7,8 @@ import (
 	"cloud.google.com/go/firestore"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
 	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var _ service.ProductService = (*ProductService)(nil)
@@ -42,6 +44,11 @@ func (s *ProductService) CreateProduct(ctx context.Context, product *service.Pro
 	product.CreatedAt = currentTime.Format(time.RFC3339)
 	product.UpdatedAt = currentTime.Format(time.RFC3339)
 
+	err := product.Validate()
+	if err != nil {
+		return nil, service.Errorf(service.INVALID_ERROR, "invalid product provided: %v", err)
+	}
+
 	productModel := s.marshallProduct(product)
 
 	docRef, _, writeErr := s.productCollection().Add(ctx, productModel)
@@ -57,14 +64,20 @@ func (s *ProductService) CreateProduct(ctx context.Context, product *service.Pro
 func (s *ProductService) GetProduct(ctx context.Context, id string) (*service.Product, error) {
 	s.CheckPreconditions()
 
+	if id == "" {
+		return nil, service.Errorf(service.INVALID_ERROR, "id is required")
+	}
+
 	docRef, getErr := s.productCollection().Doc(id).Get(ctx)
-	if getErr != nil {
-		return nil, getErr
+	if status.Code(getErr) == codes.NotFound {
+		return nil, service.Errorf(service.NOT_FOUND_ERROR, "product not found")
+	} else if getErr != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to get product: %v", getErr)
 	}
 
 	productModel := &ProductModel{}
 	if err := docRef.DataTo(productModel); err != nil {
-		return nil, err
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to unmarshall product: %v", err)
 	}
 
 	product := s.unmarshallProduct(productModel)
@@ -87,12 +100,12 @@ func (s *ProductService) ListProducts(ctx context.Context) ([]*service.Product, 
 			break
 		}
 		if err != nil {
-			return nil, err
+			return nil, service.Errorf(service.INTERNAL_ERROR, "failed to iterate products: %v", err)
 		}
 
 		productModel := &ProductModel{}
 		if err := docRef.DataTo(productModel); err != nil {
-			return nil, err
+			return nil, service.Errorf(service.INTERNAL_ERROR, "failed to unmarshall product: %v", err)
 		}
 
 		product := s.unmarshallProduct(productModel)
@@ -113,26 +126,45 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id string, update *s
 		return nil, getErr
 	}
 
-	product.Name = update.Name
-	product.Description = update.Description
-	product.Price = update.Price
+	if p := update.Name; p != nil {
+		product.Name = *p
+	}
+
+	if p := update.Description; p != nil {
+		product.Description = *p
+	}
+
+	if p := update.Price; p != nil {
+		product.Price = *p
+	}
+
+	err := product.Validate()
+	if err != nil {
+		return nil, service.Errorf(service.INVALID_ERROR, "invalid product details provided: %v", err)
+	}
 
 	timeNow := time.Now()
 	product.UpdatedAt = timeNow.Format(time.RFC3339)
 
 	productModel := s.marshallProduct(product)
 
-	_, writeErr := s.productCollection().Doc(id).Set(ctx, productModel)
+	_, err = s.productCollection().Doc(id).Set(ctx, productModel)
+	if err != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to update product: %v", err)
+	}
 
-	return product, writeErr
+	return product, nil
 }
 
 func (s *ProductService) DeleteProduct(ctx context.Context, id string) error {
 	s.CheckPreconditions()
 
-	_, deleteErr := s.productCollection().Doc(id).Delete(ctx)
+	_, err := s.productCollection().Doc(id).Delete(ctx)
+	if err != nil {
+		return service.Errorf(service.INTERNAL_ERROR, "failed to delete product: %v", err)
+	}
 
-	return deleteErr
+	return err
 }
 
 func (s *ProductService) marshallProduct(product *service.Product) *ProductModel {

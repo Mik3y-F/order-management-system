@@ -2,6 +2,7 @@ package firebase_test
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
@@ -80,6 +81,7 @@ func TestCustomerService_CreateCustomer(t *testing.T) {
 					FirstName: "Test",
 					LastName:  "Customer",
 					Email:     "test@test.com",
+					Phone:     "254722000000",
 				},
 			},
 			want: &service.Customer{
@@ -87,10 +89,25 @@ func TestCustomerService_CreateCustomer(t *testing.T) {
 				FirstName: "Test",
 				LastName:  "Customer",
 				Email:     "test@test.com",
+				Phone:     "254722000000",
 				CreatedAt: time.Now().Format(time.RFC3339),
 				UpdatedAt: time.Now().Format(time.RFC3339),
 			},
 			wantErr: false,
+		},
+		{
+			name: "Create Customer Failure - Invalid Customer",
+			args: args{
+				ctx: context.Background(),
+				customer: &service.Customer{
+					FirstName: "",
+					LastName:  "Customer",
+					Email:     "test@test.com",
+					Phone:     "1234567890",
+				},
+			},
+			want:    nil,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -100,12 +117,17 @@ func TestCustomerService_CreateCustomer(t *testing.T) {
 				t.Errorf("CustomerService.CreateCustomers() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			// Clean up the created customer
-			defer deleteTestCustomer(t, ctx, customerService, got.Id)
 
-			// Ignore the ID in the comparison since it's unpredictable
-			got.Id = ""
-			tt.want.Id = ""
+			if got != nil {
+				// Clean up the created customer
+				defer deleteTestCustomer(t, ctx, customerService, got.Id)
+				// Ignore the ID in the comparison since it's unpredictable
+				got.Id = ""
+			}
+
+			if tt.want != nil {
+				tt.want.Id = ""
+			}
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CustomerService.CreateCustomers() = %v, want %v", got, tt.want)
@@ -132,6 +154,7 @@ func TestCustomerService_GetCustomer(t *testing.T) {
 		FirstName: "Test",
 		LastName:  "Customer",
 		Email:     "test@email.com",
+		Phone:     "254722000000",
 	})
 	if err != nil {
 		t.Fatalf("failed to create customer: %v", err)
@@ -156,6 +179,15 @@ func TestCustomerService_GetCustomer(t *testing.T) {
 			},
 			want:    c,
 			wantErr: false,
+		},
+		{
+			name: "Get Customer Failure - Invalid ID",
+			args: args{
+				ctx: context.Background(),
+				id:  "",
+			},
+			want:    nil,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -191,6 +223,7 @@ func TestCustomerService_ListCustomers(t *testing.T) {
 		FirstName: "Test",
 		LastName:  "Customer",
 		Email:     "test@test.com",
+		Phone:     "254722000000",
 	})
 	if err != nil {
 		t.Fatalf("failed to create customer: %v", err)
@@ -249,6 +282,7 @@ func TestCustomerService_UpdateCustomer(t *testing.T) {
 		FirstName: "Test",
 		LastName:  "Customer",
 		Email:     "test@test.com",
+		Phone:     "254722000000",
 	})
 	if err != nil {
 		t.Fatalf("failed to create customer: %v", err)
@@ -273,9 +307,10 @@ func TestCustomerService_UpdateCustomer(t *testing.T) {
 				ctx: context.Background(),
 				id:  c.Id,
 				update: &service.CustomerUpdate{
-					FirstName: "Updated Test",
-					LastName:  "Customer",
-					Email:     "test@test.com",
+					FirstName: func(s string) *string { return &s }("Updated Test"),
+					LastName:  func(s string) *string { return &s }("Customer"),
+					Phone:     func(s string) *string { return &s }("254722000000"),
+					Email:     func(s string) *string { return &s }("test@test.com"),
 				},
 			},
 			want: &service.Customer{
@@ -283,10 +318,25 @@ func TestCustomerService_UpdateCustomer(t *testing.T) {
 				FirstName: "Updated Test",
 				LastName:  "Customer",
 				Email:     "test@test.com",
+				Phone:     "254722000000",
 				CreatedAt: c.CreatedAt,
 				UpdatedAt: time.Now().Format(time.RFC3339),
 			},
 			wantErr: false,
+		},
+		{
+			name: "Update Product Failed - Invalid Product",
+			args: args{
+				ctx: context.Background(),
+				id:  c.Id,
+				update: &service.CustomerUpdate{
+					FirstName: func(s string) *string { return &s }(""),
+					LastName:  func(s string) *string { return &s }("Customer"),
+					Email:     func(s string) *string { return &s }("test@test.com"),
+				},
+			},
+			want:    nil,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -296,8 +346,18 @@ func TestCustomerService_UpdateCustomer(t *testing.T) {
 				t.Errorf("customerService.UpdateCustomer() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("customerService.UpdateCustomer() = %v, want %v", got, tt.want)
+			// Convert structs to JSON for easier comparison
+			gotJSON, err := json.Marshal(got)
+			if err != nil {
+				t.Errorf("OrderService.UpdateOrderItem() error = %v", err)
+			}
+			wantJSON, _ := json.Marshal(tt.want)
+			if err != nil {
+				t.Errorf("OrderService.UpdateOrderItem() error = %v", err)
+			}
+
+			if string(gotJSON) != string(wantJSON) {
+				t.Errorf("OrderService.UpdateOrderItem() = %v, want %v", string(gotJSON), string(wantJSON))
 			}
 		})
 	}
@@ -320,6 +380,7 @@ func TestCustomerService_DeleteProduct(t *testing.T) {
 	c, err := customerService.CreateCustomer(ctx, &service.Customer{
 		FirstName: "Test",
 		LastName:  "Customer",
+		Phone:     "254722000000",
 		Email:     "test@test.com",
 	})
 	if err != nil {
@@ -343,6 +404,14 @@ func TestCustomerService_DeleteProduct(t *testing.T) {
 				id:  c.Id,
 			},
 			wantErr: false,
+		},
+		{
+			name: "Delete Customer Failure - Invalid ID",
+			args: args{
+				ctx: context.Background(),
+				id:  "",
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

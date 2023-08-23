@@ -7,9 +7,11 @@ import (
 
 	pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
-func (s *GRPCServer) CreateCustomer(ctx context.Context, in *pb.CreateCustomerRequest) (*pb.CreateCustomerResponse, error) {
+func (s *GRPCServer) CreateCustomer(
+	ctx context.Context, in *pb.CreateCustomerRequest) (*pb.CreateCustomerResponse, error) {
 
 	log.Printf("Received: %v", in.GetFirstName())
 
@@ -17,9 +19,10 @@ func (s *GRPCServer) CreateCustomer(ctx context.Context, in *pb.CreateCustomerRe
 		FirstName: in.GetFirstName(),
 		LastName:  in.GetLastName(),
 		Email:     in.GetEmail(),
+		Phone:     in.GetPhone(),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create customer: %w", err)
+		return nil, Error(fmt.Errorf("failed to create customer: %w", err))
 	}
 
 	return &pb.CreateCustomerResponse{
@@ -27,7 +30,8 @@ func (s *GRPCServer) CreateCustomer(ctx context.Context, in *pb.CreateCustomerRe
 	}, nil
 }
 
-func (s *GRPCServer) GetCustomer(ctx context.Context, in *pb.GetCustomerRequest) (*pb.GetCustomerResponse, error) {
+func (s *GRPCServer) GetCustomer(
+	ctx context.Context, in *pb.GetCustomerRequest) (*pb.GetCustomerResponse, error) {
 
 	log.Printf("Received: %v", in.GetId())
 
@@ -40,11 +44,13 @@ func (s *GRPCServer) GetCustomer(ctx context.Context, in *pb.GetCustomerRequest)
 		Id:        p.Id,
 		FirstName: p.FirstName,
 		LastName:  p.LastName,
+		Phone:     p.Phone,
 		Email:     p.Email,
 	}, nil
 }
 
-func (s *GRPCServer) ListCustomers(ctx context.Context, in *pb.ListCustomersRequest) (*pb.ListCustomersResponse, error) {
+func (s *GRPCServer) ListCustomers(
+	ctx context.Context, in *pb.ListCustomersRequest) (*pb.ListCustomersResponse, error) {
 
 	log.Printf("Received: %v", in)
 
@@ -59,6 +65,7 @@ func (s *GRPCServer) ListCustomers(ctx context.Context, in *pb.ListCustomersRequ
 			Id:        p.Id,
 			FirstName: p.FirstName,
 			LastName:  p.LastName,
+			Phone:     p.Phone,
 			Email:     p.Email,
 		})
 	}
@@ -68,14 +75,16 @@ func (s *GRPCServer) ListCustomers(ctx context.Context, in *pb.ListCustomersRequ
 	}, nil
 }
 
-func (s *GRPCServer) UpdateCustomer(ctx context.Context, in *pb.UpdateCustomerRequest) (*pb.UpdateCustomerResponse, error) {
+func (s *GRPCServer) UpdateCustomer(
+	ctx context.Context, in *pb.UpdateCustomerRequest) (*pb.UpdateCustomerResponse, error) {
 
 	log.Printf("Received: %v", in)
 
 	p, err := s.CustomerService.UpdateCustomer(ctx, in.GetId(), &service.CustomerUpdate{
-		FirstName: in.GetUpdate().GetFirstName(),
-		LastName:  in.GetUpdate().GetLastName(),
-		Email:     in.GetUpdate().GetEmail(),
+		FirstName: pkg.StringPtr(in.GetUpdate().GetFirstName()),
+		LastName:  pkg.StringPtr(in.GetUpdate().GetLastName()),
+		Phone:     pkg.StringPtr(in.GetUpdate().GetPhone()),
+		Email:     pkg.StringPtr(in.GetUpdate().GetEmail()),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update customer: %w", err)
@@ -89,7 +98,8 @@ func (s *GRPCServer) UpdateCustomer(ctx context.Context, in *pb.UpdateCustomerRe
 	}, nil
 }
 
-func (s *GRPCServer) DeleteCustomer(ctx context.Context, in *pb.DeleteCustomerRequest) (*pb.DeleteCustomerResponse, error) {
+func (s *GRPCServer) DeleteCustomer(
+	ctx context.Context, in *pb.DeleteCustomerRequest) (*pb.DeleteCustomerResponse, error) {
 
 	log.Printf("Received: %v", in.GetId())
 

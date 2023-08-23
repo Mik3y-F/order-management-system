@@ -7,6 +7,7 @@ import (
 
 	pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
 func (s *GRPCServer) CreateProduct(ctx context.Context, in *pb.CreateProductRequest) (*pb.CreateProductResponse, error) {
@@ -73,9 +74,9 @@ func (s *GRPCServer) UpdateProduct(ctx context.Context, in *pb.UpdateProductRequ
 	log.Printf("Received: %v", in)
 
 	p, err := s.ProductService.UpdateProduct(ctx, in.GetId(), &service.ProductUpdate{
-		Name:        in.GetUpdate().GetName(),
-		Description: in.GetUpdate().GetDescription(),
-		Price:       uint(in.GetUpdate().GetPrice()),
+		Name:        pkg.StringPtr(in.GetUpdate().GetName()),
+		Description: pkg.StringPtr(in.GetUpdate().GetDescription()),
+		Price:       pkg.UintPtr(uint(in.GetUpdate().GetPrice())),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update product: %w", err)

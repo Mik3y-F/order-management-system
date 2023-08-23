@@ -2,7 +2,6 @@ package handlers_test
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"testing"
 
@@ -16,7 +15,7 @@ const (
 
 func mockCreateOrderFunc(ctx context.Context, o *service.Order) (*service.Order, error) {
 	if o.CustomerId == ERROR_ORDER_TRIGGER {
-		return nil, errors.New("intentional error")
+		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
 	var items []*service.OrderItem
@@ -101,7 +100,7 @@ func TestGRPCServer_CreateOrder(t *testing.T) {
 
 func mockGetOrderFunc(ctx context.Context, id string) (*service.Order, error) {
 	if id == ERROR_ORDER_TRIGGER {
-		return nil, errors.New("intentional error")
+		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
 	return &service.Order{
@@ -249,7 +248,7 @@ func TestGRPCServer_ListOrders(t *testing.T) {
 
 func mockUpdateOrderStatusFunc(ctx context.Context, id string, status service.OrderStatus) (*service.Order, error) {
 	if id == ERROR_ORDER_TRIGGER {
-		return nil, errors.New("intentional error")
+		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
 	return &service.Order{
@@ -325,7 +324,7 @@ func TestGRPCServer_UpdateOrderStatus(t *testing.T) {
 
 func mockDeleteOrderFunc(ctx context.Context, id string) error {
 	if id == ERROR_ORDER_TRIGGER {
-		return errors.New("intentional error")
+		return service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
 	return nil
@@ -386,7 +385,7 @@ func TestGRPCServer_DeleteOrder(t *testing.T) {
 
 func mockCreateOrderItemFunc(ctx context.Context, orderId string, item *service.OrderItem) (*service.OrderItem, error) {
 	if orderId == ERROR_ORDER_TRIGGER {
-		return nil, errors.New("intentional error")
+		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
 	return &service.OrderItem{
@@ -458,7 +457,7 @@ func TestGRPCServer_CreateOrderItem(t *testing.T) {
 
 func mockGetOrderItemFunc(ctx context.Context, orderId, itemId string) (*service.OrderItem, error) {
 	if orderId == ERROR_ORDER_TRIGGER {
-		return nil, errors.New("intentional error")
+		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
 	return &service.OrderItem{
@@ -528,7 +527,7 @@ func TestGRPCServer_GetOrderItem(t *testing.T) {
 
 func mockListOrderItemsFunc(ctx context.Context, orderId string) ([]*service.OrderItem, error) {
 	if orderId == ERROR_ORDER_TRIGGER {
-		return nil, errors.New("intentional error")
+		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
 	return []*service.OrderItem{
@@ -604,7 +603,7 @@ func TestGRPCServer_ListOrderItems(t *testing.T) {
 
 func mockUpdateOrderItemFunc(ctx context.Context, orderId, itemId string, item *service.OrderItemUpdate) (*service.OrderItem, error) {
 	if orderId == ERROR_ORDER_TRIGGER {
-		return nil, errors.New("intentional error")
+		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
 	return &service.OrderItem{
@@ -680,7 +679,7 @@ func TestGRPCServer_UpdateOrderItem(t *testing.T) {
 
 func mockDeleteOrderItemFunc(ctx context.Context, orderId, itemId string) error {
 	if orderId == ERROR_ORDER_TRIGGER {
-		return errors.New("intentional error")
+		return service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
 	return nil

@@ -2,12 +2,13 @@ package firebase
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/firestore"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
 	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var _ service.OrderService = (*OrderService)(nil)
@@ -43,18 +44,25 @@ func (s *OrderService) CreateOrder(ctx context.Context, order *service.Order) (*
 	order.CreatedAt = currentTime.Format(time.RFC3339)
 	order.UpdatedAt = currentTime.Format(time.RFC3339)
 
+	order.OrderStatus = service.OrderStatusNew
+
+	err := order.Validate()
+	if err != nil {
+		return nil, service.Errorf(service.INVALID_ERROR, "invalid order details provided: %v", err)
+	}
+
 	orderModel := s.marshallOrder(order)
 
-	docRef, _, writeErr := s.orderCollection().Add(ctx, orderModel)
-	if writeErr != nil {
-		return nil, writeErr
+	docRef, _, err := s.orderCollection().Add(ctx, orderModel)
+	if err != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to create order: %v", err)
 	}
 
 	order.Id = docRef.ID
 
-	_, err := s.CreateOrderItems(ctx, order.Id, order.Items)
+	_, err = s.CreateOrderItems(ctx, order.Id, order.Items)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create order items: %v", err)
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to create order items: %v", err)
 	}
 
 	return order, nil
@@ -63,14 +71,20 @@ func (s *OrderService) CreateOrder(ctx context.Context, order *service.Order) (*
 func (s *OrderService) GetOrder(ctx context.Context, id string) (*service.Order, error) {
 	s.CheckPreconditions()
 
-	docRef, getErr := s.orderCollection().Doc(id).Get(ctx)
-	if getErr != nil {
-		return nil, getErr
+	if id == "" {
+		return nil, service.Errorf(service.INVALID_ERROR, "id is required")
+	}
+
+	docRef, err := s.orderCollection().Doc(id).Get(ctx)
+	if status.Code(err) == codes.NotFound {
+		return nil, service.Errorf(service.NOT_FOUND_ERROR, "order not found")
+	} else if err != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to get order: %v", err)
 	}
 
 	orderModel := &OrderModel{}
 	if err := docRef.DataTo(orderModel); err != nil {
-		return nil, err
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to unmarshall order: %v", err)
 	}
 
 	order := s.unmarshallOrder(orderModel)
@@ -79,7 +93,7 @@ func (s *OrderService) GetOrder(ctx context.Context, id string) (*service.Order,
 
 	orderItems, err := s.ListOrderItems(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get order items: %v", err)
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to get order items: %v", err)
 	}
 
 	order.Items = orderItems
@@ -100,12 +114,12 @@ func (s *OrderService) ListOrders(ctx context.Context) ([]*service.Order, error)
 			break
 		}
 		if err != nil {
-			return nil, err
+			return nil, service.Errorf(service.INTERNAL_ERROR, "failed to iterate orders: %v", err)
 		}
 
 		orderModel := &OrderModel{}
 		if err := doc.DataTo(orderModel); err != nil {
-			return nil, err
+			return nil, service.Errorf(service.INTERNAL_ERROR, "failed to unmarshall order: %v", err)
 		}
 
 		order := s.unmarshallOrder(orderModel)
@@ -114,7 +128,7 @@ func (s *OrderService) ListOrders(ctx context.Context) ([]*service.Order, error)
 
 		orderItems, err := s.ListOrderItems(ctx, order.Id)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get order items: %v", err)
+			return nil, service.Errorf(service.INTERNAL_ERROR, "failed to get order items: %v", err)
 		}
 
 		order.Items = orderItems
@@ -135,14 +149,12 @@ func (s *OrderService) UpdateOrderStatus(
 	}
 
 	order.OrderStatus = status
-
-	// Set UpdatedAt to the current time
 	order.UpdatedAt = time.Now().Format(time.RFC3339)
 
 	orderModel := s.marshallOrder(order)
 	_, err = s.orderCollection().Doc(orderId).Set(ctx, orderModel)
 	if err != nil {
-		return nil, err
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to update order status: %v", err)
 	}
 
 	return s.GetOrder(ctx, orderId)
@@ -153,7 +165,7 @@ func (s *OrderService) DeleteOrder(ctx context.Context, id string) error {
 
 	_, err := s.orderCollection().Doc(id).Delete(ctx)
 	if err != nil {
-		return err
+		return service.Errorf(service.INTERNAL_ERROR, "failed to delete order: %v", err)
 	}
 
 	return nil
@@ -176,11 +188,16 @@ func (s *OrderService) CreateOrderItem(
 	orderItem.CreatedAt = currentTime.Format(time.RFC3339)
 	orderItem.UpdatedAt = currentTime.Format(time.RFC3339)
 
+	err := orderItem.Validate()
+	if err != nil {
+		return nil, service.Errorf(service.INVALID_ERROR, "invalid order item details provided: %v", err)
+	}
+
 	orderItemModel := s.marshallOrderItem(orderItem)
 
-	docRef, _, writeErr := s.orderItemCollection(orderId).Add(ctx, orderItemModel)
-	if writeErr != nil {
-		return nil, writeErr
+	docRef, _, err := s.orderItemCollection(orderId).Add(ctx, orderItemModel)
+	if err != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to create order item: %v", err)
 	}
 
 	orderItem.Id = docRef.ID
@@ -193,6 +210,10 @@ func (s *OrderService) CreateOrderItems(
 
 	s.CheckPreconditions()
 
+	if orderId == "" {
+		return nil, service.Errorf(service.INVALID_ERROR, "order id is required")
+	}
+
 	bulkWriter := s.db.client.BulkWriter(ctx)
 
 	currentTime := time.Now().Format(time.RFC3339)
@@ -203,15 +224,20 @@ func (s *OrderService) CreateOrderItems(
 		orderItem.CreatedAt = currentTime
 		orderItem.UpdatedAt = currentTime
 
+		err := orderItem.Validate()
+		if err != nil {
+			return nil, service.Errorf(service.INVALID_ERROR, "invalid order item details provided: %v", err)
+		}
+
 		orderItemModel := s.marshallOrderItem(orderItem)
 		docRef := s.orderItemCollection(orderId).NewDoc() // Create a new document reference.
 
 		orderItem.Id = docRef.ID
 		createdOrderItems = append(createdOrderItems, orderItem)
 
-		_, err := bulkWriter.Create(docRef, orderItemModel)
+		_, err = bulkWriter.Create(docRef, orderItemModel)
 		if err != nil {
-			return nil, err
+			return nil, service.Errorf(service.INTERNAL_ERROR, "failed to create order item: %v", err)
 		}
 	}
 
@@ -225,14 +251,22 @@ func (s *OrderService) GetOrderItem(
 
 	s.CheckPreconditions()
 
-	docRef, getErr := s.orderItemCollection(orderId).Doc(orderItemId).Get(ctx)
-	if getErr != nil {
-		return nil, getErr
+	if orderId == "" {
+		return nil, service.Errorf(service.INVALID_ERROR, "order id is required")
+	} else if orderItemId == "" {
+		return nil, service.Errorf(service.INVALID_ERROR, "order item id is required")
+	}
+
+	docRef, err := s.orderItemCollection(orderId).Doc(orderItemId).Get(ctx)
+	if status.Code(err) == codes.NotFound {
+		return nil, service.Errorf(service.NOT_FOUND_ERROR, "order item not found")
+	} else if err != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to get order item: %v", err)
 	}
 
 	orderItemModel := &OrderItemModel{}
 	if err := docRef.DataTo(orderItemModel); err != nil {
-		return nil, err
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to unmarshall order item: %v", err)
 	}
 
 	orderItem := s.unmarshallOrderItem(orderItemModel)
@@ -244,6 +278,10 @@ func (s *OrderService) GetOrderItem(
 
 func (s *OrderService) ListOrderItems(ctx context.Context, orderId string) ([]*service.OrderItem, error) {
 	s.CheckPreconditions()
+
+	if orderId == "" {
+		return nil, service.Errorf(service.INVALID_ERROR, "order id is required")
+	}
 
 	iter := s.orderItemCollection(orderId).Documents(ctx)
 
@@ -260,7 +298,7 @@ func (s *OrderService) ListOrderItems(ctx context.Context, orderId string) ([]*s
 
 		orderItemModel := &OrderItemModel{}
 		if err := doc.DataTo(orderItemModel); err != nil {
-			return nil, err
+			return nil, service.Errorf(service.INTERNAL_ERROR, "failed to unmarshall order item: %v", err)
 		}
 
 		orderItem := s.unmarshallOrderItem(orderItemModel)
@@ -278,6 +316,12 @@ func (s *OrderService) UpdateOrderItem(
 
 	s.CheckPreconditions()
 
+	if orderId == "" {
+		return nil, service.Errorf(service.INVALID_ERROR, "order id is required")
+	} else if orderItemId == "" {
+		return nil, service.Errorf(service.INVALID_ERROR, "order item id is required")
+	}
+
 	orderItem, err := s.GetOrderItem(ctx, orderId, orderItemId)
 	if err != nil {
 		return nil, err
@@ -293,7 +337,7 @@ func (s *OrderService) UpdateOrderItem(
 	orderItemModel := s.marshallOrderItem(orderItem)
 	_, err = s.orderItemCollection(orderId).Doc(orderItemId).Set(ctx, orderItemModel)
 	if err != nil {
-		return nil, err
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to update order item: %v", err)
 	}
 
 	return s.GetOrderItem(ctx, orderId, orderItemId)
@@ -302,9 +346,15 @@ func (s *OrderService) UpdateOrderItem(
 func (s *OrderService) DeleteOrderItem(ctx context.Context, orderId string, orderItemId string) error {
 	s.CheckPreconditions()
 
+	if orderId == "" {
+		return service.Errorf(service.INVALID_ERROR, "order id is required")
+	} else if orderItemId == "" {
+		return service.Errorf(service.INVALID_ERROR, "order item id is required")
+	}
+
 	_, err := s.orderItemCollection(orderId).Doc(orderItemId).Delete(ctx)
 	if err != nil {
-		return err
+		return service.Errorf(service.INTERNAL_ERROR, "failed to delete order item: %v", err)
 	}
 
 	return nil
@@ -312,19 +362,21 @@ func (s *OrderService) DeleteOrderItem(ctx context.Context, orderId string, orde
 
 func (s *OrderService) marshallOrder(order *service.Order) *OrderModel {
 	return &OrderModel{
-		CustomerId: order.CustomerId,
-		Items:      s.marshallOrderItems(order.Items),
-		CreatedAt:  order.CreatedAt,
-		UpdatedAt:  order.UpdatedAt,
+		CustomerId:  order.CustomerId,
+		Items:       s.marshallOrderItems(order.Items),
+		OrderStatus: string(order.OrderStatus),
+		CreatedAt:   order.CreatedAt,
+		UpdatedAt:   order.UpdatedAt,
 	}
 }
 
 func (s *OrderService) unmarshallOrder(order *OrderModel) *service.Order {
 	return &service.Order{
-		CustomerId: order.CustomerId,
-		Items:      s.unmarshallOrderItems(order.Items),
-		CreatedAt:  order.CreatedAt,
-		UpdatedAt:  order.UpdatedAt,
+		CustomerId:  order.CustomerId,
+		Items:       s.unmarshallOrderItems(order.Items),
+		OrderStatus: service.OrderStatus(order.OrderStatus),
+		CreatedAt:   order.CreatedAt,
+		UpdatedAt:   order.UpdatedAt,
 	}
 }
 
