@@ -24,3 +24,11 @@ type ProductService interface {
 	UpdateProduct(ctx context.Context, id string, update *ProductUpdate) (*Product, error)
 	DeleteProduct(ctx context.Context, id string) error
 }
+
+func (p *Product) Validate() error {
+	if p.Name == "" {
+		return Errorf(INVALID_ERROR, "name is required")
+	}
+
+	return nil
+}

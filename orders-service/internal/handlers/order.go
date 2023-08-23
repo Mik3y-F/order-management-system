@@ -23,7 +23,7 @@ func (s *GRPCServer) CreateOrder(ctx context.Context, in *pb.CreateOrderRequest)
 		Items:      items,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create order: %w", err)
+		return nil, Error(fmt.Errorf("failed to create order: %w", err))
 	}
 
 	return &pb.CreateOrderResponse{
@@ -35,7 +35,7 @@ func (s *GRPCServer) GetOrder(ctx context.Context, in *pb.GetOrderRequest) (*pb.
 
 	order, err := s.OrderService.GetOrder(ctx, in.GetId())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get order: %w", err)
+		return nil, Error(fmt.Errorf("failed to get order: %w", err))
 	}
 
 	var orderItems []*pb.OrderItem
@@ -58,7 +58,7 @@ func (s *GRPCServer) ListOrders(ctx context.Context, in *pb.ListOrdersRequest) (
 
 	orders, err := s.OrderService.ListOrders(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list orders: %w", err)
+		return nil, Error(fmt.Errorf("failed to list orders: %w", err))
 	}
 
 	var responseOrders []*pb.Order
@@ -89,7 +89,7 @@ func (s *GRPCServer) UpdateOrderStatus(
 
 	order, err := s.OrderService.UpdateOrderStatus(ctx, in.GetId(), getOrderStatus(in.GetStatus()))
 	if err != nil {
-		return nil, fmt.Errorf("failed to update order status: %w", err)
+		return nil, Error(fmt.Errorf("failed to update order status: %w", err))
 	}
 
 	return &pb.UpdateOrderStatusResponse{
@@ -103,7 +103,7 @@ func (s *GRPCServer) DeleteOrder(ctx context.Context, in *pb.DeleteOrderRequest)
 
 	err := s.OrderService.DeleteOrder(ctx, in.GetId())
 	if err != nil {
-		return nil, fmt.Errorf("failed to delete order: %w", err)
+		return nil, Error(fmt.Errorf("failed to delete order: %w", err))
 	}
 
 	return &pb.DeleteOrderResponse{}, nil
@@ -117,7 +117,7 @@ func (s *GRPCServer) CreateOrderItem(
 		Quantity:  uint(in.GetQuantity()),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create order item: %w", err)
+		return nil, Error(fmt.Errorf("failed to create order item: %w", err))
 	}
 
 	return &pb.CreateOrderItemResponse{
@@ -129,7 +129,7 @@ func (s *GRPCServer) GetOrderItem(ctx context.Context, in *pb.GetOrderItemReques
 
 	orderItem, err := s.OrderService.GetOrderItem(ctx, in.GetOrderId(), in.GetId())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get order item: %w", err)
+		return nil, Error(fmt.Errorf("failed to get order item: %w", err))
 	}
 
 	return &pb.GetOrderItemResponse{
@@ -144,7 +144,7 @@ func (s *GRPCServer) ListOrderItems(
 
 	orderItems, err := s.OrderService.ListOrderItems(ctx, in.GetOrderId())
 	if err != nil {
-		return nil, fmt.Errorf("failed to list order items: %w", err)
+		return nil, Error(fmt.Errorf("failed to list order items: %w", err))
 	}
 
 	var responseOrderItems []*pb.OrderItem
@@ -173,7 +173,7 @@ func (s *GRPCServer) UpdateOrderItem(
 		Quantity: quantity,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to update order item: %w", err)
+		return nil, Error(fmt.Errorf("failed to update order item: %w", err))
 	}
 
 	return &pb.UpdateOrderItemResponse{
@@ -188,7 +188,7 @@ func (s *GRPCServer) DeleteOrderItem(
 
 	err := s.OrderService.DeleteOrderItem(ctx, in.GetOrderId(), in.GetId())
 	if err != nil {
-		return nil, fmt.Errorf("failed to delete order item: %w", err)
+		return nil, Error(fmt.Errorf("failed to delete order item: %w", err))
 	}
 
 	return &pb.DeleteOrderItemResponse{}, nil
