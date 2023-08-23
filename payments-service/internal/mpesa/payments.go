@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	MPESA_BUSINESS_SHORT_CODE = "MPESA_BUSINESS_SHORT_CODE"
-	MPESA_PASSKEY             = "MPESA_PASSKEY"
+	MPESA_BUSINESS_SHORT_CODE = "MPESA_BUSINESS_SHORT_CODE" // #nosec G101 - This is an env variable name
+	MPESA_PASSKEY             = "MPESA_PASSKEY"             // #nosec G101 - This is an env variable name
 )
 
 var _ service.PaymentsService = (*PaymentsService)(nil)

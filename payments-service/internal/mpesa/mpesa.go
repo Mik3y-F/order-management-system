@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	MPESA_CONSUMER_KEY    = "MPESA_CONSUMER_KEY"
-	MPESA_CONSUMER_SECRET = "MPESA_CONSUMER_SECRET"
+	MPESA_CONSUMER_KEY    = "MPESA_CONSUMER_KEY"    // #nosec G101 - This is an env variable name
+	MPESA_CONSUMER_SECRET = "MPESA_CONSUMER_SECRET" // #nosec G101 - This is an env variable name
 	ENVIRONMENT           = "ENVIRONMENT"
 )
 
