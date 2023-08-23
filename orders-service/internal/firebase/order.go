@@ -125,6 +125,29 @@ func (s *OrderService) ListOrders(ctx context.Context) ([]*service.Order, error)
 	return orders, nil
 }
 
+func (s *OrderService) UpdateOrderStatus(
+	ctx context.Context, orderId string, status service.OrderStatus) (*service.Order, error) {
+	s.CheckPreconditions()
+
+	order, err := s.GetOrder(ctx, orderId)
+	if err != nil {
+		return nil, err
+	}
+
+	order.OrderStatus = status
+
+	// Set UpdatedAt to the current time
+	order.UpdatedAt = time.Now().Format(time.RFC3339)
+
+	orderModel := s.marshallOrder(order)
+	_, err = s.orderCollection().Doc(orderId).Set(ctx, orderModel)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.GetOrder(ctx, orderId)
+}
+
 func (s *OrderService) DeleteOrder(ctx context.Context, id string) error {
 	s.CheckPreconditions()
 

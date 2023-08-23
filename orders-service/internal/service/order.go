@@ -11,8 +11,7 @@ type OrderItem struct {
 }
 
 type OrderItemUpdate struct {
-	Quantity    *uint        `json:"quantity"`
-	OrderStatus *OrderStatus `json:"order_status"`
+	Quantity *uint `json:"quantity"`
 }
 
 type OrderStatus string
@@ -39,6 +38,7 @@ type OrderService interface {
 	CreateOrder(ctx context.Context, order *Order) (*Order, error)
 	GetOrder(ctx context.Context, id string) (*Order, error)
 	ListOrders(ctx context.Context) ([]*Order, error)
+	UpdateOrderStatus(ctx context.Context, orderId string, status OrderStatus) (*Order, error)
 	DeleteOrder(ctx context.Context, id string) error
 
 	// OrderItem CRUD

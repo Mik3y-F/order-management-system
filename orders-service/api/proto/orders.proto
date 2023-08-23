@@ -27,6 +27,7 @@ service Orders {
     rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse) {}
     rpc GetOrder (GetOrderRequest) returns (GetOrderResponse) {}
     rpc ListOrders (ListOrdersRequest) returns (ListOrdersResponse) {}
+    rpc UpdateOrderStatus (UpdateOrderStatusRequest) returns (UpdateOrderStatusResponse) {}
     rpc DeleteOrder (DeleteOrderRequest) returns (DeleteOrderResponse) {}
     rpc ProcessCheckout (ProcessCheckoutRequest) returns (ProcessCheckoutResponse) {}
 
@@ -234,6 +235,20 @@ message ListOrdersResponse {
 }
 
 
+message UpdateOrderStatusRequest {
+    string id = 1;
+    OrderStatus status = 2;
+}
+
+message UpdateOrderStatusResponse {
+    string id = 1;
+    string customer_id = 2;
+    repeated OrderItem order_items = 3;
+    OrderStatus status = 4;
+    google.protobuf.Timestamp created_at = 5;
+    google.protobuf.Timestamp updated_at = 6;
+}
+
 message DeleteOrderRequest {
     string id = 1;
 }
@@ -266,46 +281,49 @@ message CreateOrderItemResponse {
 
 message GetOrderItemRequest {
     string id = 1;
+    string order_id = 2;
 }
 
 message GetOrderItemResponse {
     string id = 1;
     string order_id = 2;
     string product_id = 3;
-    int32 quantity = 4;
+    uint32 quantity = 4;
     repeated OrderItem order_items = 5;
     google.protobuf.Timestamp created_at = 6;
     google.protobuf.Timestamp updated_at = 7;
 }
 
-message ListOrderItemsRequest {}
+message ListOrderItemsRequest {
+    string order_id = 1;
+}
 
 message ListOrderItemsResponse {
     repeated OrderItem order_items = 1;
 }
 
 message OrderItemUpdate {
-    string order_id = 1;
-    string product_id = 2;
-    int32 quantity = 3;
+    uint32 quantity = 3;
 }
 
 message UpdateOrderItemRequest {
     string id = 1;
-    OrderItemUpdate update = 2;
+    string order_id = 2;
+    OrderItemUpdate update = 3;
 }
 
 message UpdateOrderItemResponse {
     string id = 1;
     string order_id = 2;
     string product_id = 3;
-    int32 quantity = 4;
+    uint32 quantity = 4;
     google.protobuf.Timestamp created_at = 6;
     google.protobuf.Timestamp updated_at = 7;
 }
 
 message DeleteOrderItemRequest {
     string id = 1;
+    string order_id = 2;
 }
 
 message DeleteOrderItemResponse {
