@@ -44,6 +44,8 @@ func (s *OrderService) CreateOrder(ctx context.Context, order *service.Order) (*
 	order.CreatedAt = currentTime.Format(time.RFC3339)
 	order.UpdatedAt = currentTime.Format(time.RFC3339)
 
+	order.OrderStatus = service.OrderStatusNew
+
 	err := order.Validate()
 	if err != nil {
 		return nil, service.Errorf(service.INVALID_ERROR, "invalid order details provided: %v", err)
@@ -222,13 +224,18 @@ func (s *OrderService) CreateOrderItems(
 		orderItem.CreatedAt = currentTime
 		orderItem.UpdatedAt = currentTime
 
+		err := orderItem.Validate()
+		if err != nil {
+			return nil, service.Errorf(service.INVALID_ERROR, "invalid order item details provided: %v", err)
+		}
+
 		orderItemModel := s.marshallOrderItem(orderItem)
 		docRef := s.orderItemCollection(orderId).NewDoc() // Create a new document reference.
 
 		orderItem.Id = docRef.ID
 		createdOrderItems = append(createdOrderItems, orderItem)
 
-		_, err := bulkWriter.Create(docRef, orderItemModel)
+		_, err = bulkWriter.Create(docRef, orderItemModel)
 		if err != nil {
 			return nil, service.Errorf(service.INTERNAL_ERROR, "failed to create order item: %v", err)
 		}
@@ -339,6 +346,12 @@ func (s *OrderService) UpdateOrderItem(
 func (s *OrderService) DeleteOrderItem(ctx context.Context, orderId string, orderItemId string) error {
 	s.CheckPreconditions()
 
+	if orderId == "" {
+		return service.Errorf(service.INVALID_ERROR, "order id is required")
+	} else if orderItemId == "" {
+		return service.Errorf(service.INVALID_ERROR, "order item id is required")
+	}
+
 	_, err := s.orderItemCollection(orderId).Doc(orderItemId).Delete(ctx)
 	if err != nil {
 		return service.Errorf(service.INTERNAL_ERROR, "failed to delete order item: %v", err)
@@ -349,19 +362,21 @@ func (s *OrderService) DeleteOrderItem(ctx context.Context, orderId string, orde
 
 func (s *OrderService) marshallOrder(order *service.Order) *OrderModel {
 	return &OrderModel{
-		CustomerId: order.CustomerId,
-		Items:      s.marshallOrderItems(order.Items),
-		CreatedAt:  order.CreatedAt,
-		UpdatedAt:  order.UpdatedAt,
+		CustomerId:  order.CustomerId,
+		Items:       s.marshallOrderItems(order.Items),
+		OrderStatus: string(order.OrderStatus),
+		CreatedAt:   order.CreatedAt,
+		UpdatedAt:   order.UpdatedAt,
 	}
 }
 
 func (s *OrderService) unmarshallOrder(order *OrderModel) *service.Order {
 	return &service.Order{
-		CustomerId: order.CustomerId,
-		Items:      s.unmarshallOrderItems(order.Items),
-		CreatedAt:  order.CreatedAt,
-		UpdatedAt:  order.UpdatedAt,
+		CustomerId:  order.CustomerId,
+		Items:       s.unmarshallOrderItems(order.Items),
+		OrderStatus: service.OrderStatus(order.OrderStatus),
+		CreatedAt:   order.CreatedAt,
+		UpdatedAt:   order.UpdatedAt,
 	}
 }
 

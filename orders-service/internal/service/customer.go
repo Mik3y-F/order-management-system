@@ -7,14 +7,36 @@ type Customer struct {
 	FirstName string
 	LastName  string
 	Email     string
+	Phone     string
 	CreatedAt string
 	UpdatedAt string
 }
 
+func (c *Customer) Validate() error {
+	if c.FirstName == "" {
+		return Errorf(INVALID_ERROR, "first_name is required")
+	}
+
+	if c.LastName == "" {
+		return Errorf(INVALID_ERROR, "last_name is required")
+	}
+
+	if c.Email == "" {
+		return Errorf(INVALID_ERROR, "email is required")
+	}
+
+	if c.Phone == "" {
+		return Errorf(INVALID_ERROR, "phone is required")
+	}
+
+	return nil
+}
+
 type CustomerUpdate struct {
-	FirstName string
-	LastName  string
-	Email     string
+	FirstName *string
+	LastName  *string
+	Phone     *string
+	Email     *string
 }
 
 type CustomerService interface {

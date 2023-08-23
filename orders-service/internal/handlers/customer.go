@@ -7,6 +7,7 @@ import (
 
 	pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
 func (s *GRPCServer) CreateCustomer(
@@ -77,9 +78,10 @@ func (s *GRPCServer) UpdateCustomer(
 	log.Printf("Received: %v", in)
 
 	p, err := s.CustomerService.UpdateCustomer(ctx, in.GetId(), &service.CustomerUpdate{
-		FirstName: in.GetUpdate().GetFirstName(),
-		LastName:  in.GetUpdate().GetLastName(),
-		Email:     in.GetUpdate().GetEmail(),
+		FirstName: pkg.StringPtr(in.GetUpdate().GetFirstName()),
+		LastName:  pkg.StringPtr(in.GetUpdate().GetLastName()),
+		Phone:     pkg.StringPtr(in.GetUpdate().GetPhone()),
+		Email:     pkg.StringPtr(in.GetUpdate().GetEmail()),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update customer: %w", err)

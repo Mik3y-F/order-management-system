@@ -88,7 +88,8 @@ func TestOrderService_CreateOrder(t *testing.T) {
 				},
 			},
 			want: &service.Order{
-				CustomerId: "customer-1",
+				CustomerId:  "customer-1",
+				OrderStatus: service.OrderStatusNew,
 				Items: []*service.OrderItem{
 					{
 						ProductId: "product-1",
@@ -101,27 +102,104 @@ func TestOrderService_CreateOrder(t *testing.T) {
 				UpdatedAt: time.Now().Format(time.RFC3339),
 			},
 		},
+		{
+			name: "Create Order Success - Multiple Items",
+			args: args{
+				ctx: ctx,
+				order: &service.Order{
+					CustomerId: "customer-1",
+					Items: []*service.OrderItem{
+						{
+							ProductId: "product-1",
+							Quantity:  1,
+						},
+						{
+							ProductId: "product-2",
+							Quantity:  1,
+						},
+					},
+				},
+			},
+			want: &service.Order{
+				CustomerId:  "customer-1",
+				OrderStatus: service.OrderStatusNew,
+				Items: []*service.OrderItem{
+					{
+						ProductId: "product-1",
+						Quantity:  1,
+						UpdatedAt: time.Now().Format(time.RFC3339),
+						CreatedAt: time.Now().Format(time.RFC3339),
+					},
+					{
+						ProductId: "product-2",
+						Quantity:  1,
+						UpdatedAt: time.Now().Format(time.RFC3339),
+						CreatedAt: time.Now().Format(time.RFC3339),
+					},
+				},
+				CreatedAt: time.Now().Format(time.RFC3339),
+				UpdatedAt: time.Now().Format(time.RFC3339),
+			},
+		},
+		{
+			name: "Create Order Error - Missing Customer ID",
+			args: args{
+				ctx: ctx,
+				order: &service.Order{
+					Items: []*service.OrderItem{
+						{
+							ProductId: "product-1",
+							Quantity:  1,
+						},
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Create Order Error - Missing Items",
+			args: args{
+				ctx: ctx,
+				order: &service.Order{
+					CustomerId: "customer-1",
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := orderService.CreateOrder(tt.args.ctx, tt.args.order)
-
 			if (err != nil) != tt.wantErr {
 				t.Errorf("OrderService.CreateOrder() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			defer deleteTestOrder(t, ctx, orderService, got.Id)
 
-			// Clear out the fields that are set by the DB
-			got.Id = ""
-			tt.want.Id = ""
+			if got != nil {
+				// Clear out the fields that are set by the DB
+				defer deleteTestOrder(t, ctx, orderService, got.Id)
 
-			for _, item := range got.Items {
-				item.Id = ""
+				got.Id = ""
+				got.CreatedAt = ""
+				got.UpdatedAt = ""
+				for _, item := range got.Items {
+					item.Id = ""
+					item.CreatedAt = ""
+					item.UpdatedAt = ""
+				}
 			}
 
-			for _, item := range tt.want.Items {
-				item.Id = ""
+			if tt.want != nil {
+				tt.want.Id = ""
+				tt.want.CreatedAt = ""
+				tt.want.UpdatedAt = ""
+				for _, item := range tt.want.Items {
+					item.Id = ""
+					item.CreatedAt = ""
+					item.UpdatedAt = ""
+				}
 			}
 
 			// Convert structs to JSON for easier comparison
@@ -189,6 +267,15 @@ func TestOrderService_GetOrder(t *testing.T) {
 			want:    testOrder,
 			wantErr: false,
 		},
+		{
+			name: "Get Order Error - Missing ID",
+			args: args{
+				ctx: ctx,
+				id:  "",
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -233,8 +320,6 @@ func TestOrderService_ListOrders(t *testing.T) {
 			{
 				ProductId: "product-1",
 				Quantity:  1,
-				UpdatedAt: time.Now().Format(time.RFC3339),
-				CreatedAt: time.Now().Format(time.RFC3339),
 			},
 		},
 	})
@@ -331,6 +416,11 @@ func TestOrderService_DeleteOrder(t *testing.T) {
 			args:    args{ctx: ctx, id: testOrder.Id},
 			wantErr: false,
 		},
+		{
+			name:    "Delete Order Error - Missing ID",
+			args:    args{ctx: ctx, id: ""},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -399,6 +489,40 @@ func TestOrderService_CreateOrderItem(t *testing.T) {
 				CreatedAt: time.Now().Format(time.RFC3339),
 			},
 		},
+		{
+			name: "Create Order Item Error - Missing Order ID",
+			args: args{
+				ctx:       ctx,
+				orderId:   "",
+				orderItem: &service.OrderItem{},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Create Order Item Error - Missing Product ID",
+			args: args{
+				ctx:     ctx,
+				orderId: testOrder.Id,
+				orderItem: &service.OrderItem{
+					Quantity: 1,
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Create Order Item Error - Missing Quantity",
+			args: args{
+				ctx:     ctx,
+				orderId: testOrder.Id,
+				orderItem: &service.OrderItem{
+					ProductId: "product-2",
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -409,9 +533,13 @@ func TestOrderService_CreateOrderItem(t *testing.T) {
 				return
 			}
 
-			// Clear out the fields that are set by the DB
-			got.Id = ""
-			tt.want.Id = ""
+			if got != nil {
+				got.Id = ""
+			}
+
+			if tt.want != nil {
+				tt.want.Id = ""
+			}
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("OrderService.CreateOrderItem() = %v, want %v", got, tt.want)
@@ -491,6 +619,44 @@ func TestOrderService_CreateOrderItems(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Create Order Items Error - Missing Order ID",
+			args: args{
+				ctx:        ctx,
+				orderId:    "",
+				orderItems: []*service.OrderItem{},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Create Order Items Error - Missing Product ID",
+			args: args{
+				ctx:     ctx,
+				orderId: testOrder.Id,
+				orderItems: []*service.OrderItem{
+					{
+						Quantity: 1,
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Create Order Items Error - Missing Quantity",
+			args: args{
+				ctx:     ctx,
+				orderId: testOrder.Id,
+				orderItems: []*service.OrderItem{
+					{
+						ProductId: "product-2",
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -501,11 +667,15 @@ func TestOrderService_CreateOrderItems(t *testing.T) {
 			}
 
 			for _, item := range got {
-				item.Id = ""
+				if item != nil {
+					item.Id = ""
+				}
 			}
 
 			for _, item := range tt.want {
-				item.Id = ""
+				if item != nil {
+					item.Id = ""
+				}
 			}
 
 			// Convert structs to JSON for easier comparison
@@ -575,6 +745,26 @@ func TestOrderService_GetOrderItem(t *testing.T) {
 			},
 			want: testOrder.Items[0],
 		},
+		{
+			name: "Get Order Item Error - Missing Order ID",
+			args: args{
+				ctx:         ctx,
+				orderId:     "",
+				orderItemId: testOrder.Items[0].Id,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Get Order Item Error - Missing Order Item ID",
+			args: args{
+				ctx:         ctx,
+				orderId:     testOrder.Id,
+				orderItemId: "",
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -636,6 +826,15 @@ func TestOrderService_ListOrderItems(t *testing.T) {
 				orderId: testOrder.Id,
 			},
 			want: testOrder.Items,
+		},
+		{
+			name: "List Order Items Error - Missing Order ID",
+			args: args{
+				ctx:     ctx,
+				orderId: "",
+			},
+			want:    nil,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -711,6 +910,32 @@ func TestOrderService_UpdateOrderItem(t *testing.T) {
 				CreatedAt: time.Now().Format(time.RFC3339),
 			},
 		},
+		{
+			name: "Update Order Item Error - Missing Order ID",
+			args: args{
+				ctx:         ctx,
+				orderId:     "",
+				orderItemId: testOrder.Items[0].Id,
+				update: &service.OrderItemUpdate{
+					Quantity: func(i uint) *uint { return &i }(2),
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Update Order Item Error - Missing Order Item ID",
+			args: args{
+				ctx:         ctx,
+				orderId:     testOrder.Id,
+				orderItemId: "",
+				update: &service.OrderItemUpdate{
+					Quantity: func(i uint) *uint { return &i }(2),
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -784,11 +1009,145 @@ func TestOrderService_DeleteOrderItem(t *testing.T) {
 				orderItemId: testOrder.Items[0].Id,
 			},
 		},
+		{
+			name: "Delete Order Item Error - Missing Order ID",
+			args: args{
+				ctx:         ctx,
+				orderId:     "",
+				orderItemId: testOrder.Items[0].Id,
+			},
+			wantErr: true,
+		},
+		{
+			name: "Delete Order Item Error - Missing Order Item ID",
+			args: args{
+				ctx:         ctx,
+				orderId:     testOrder.Id,
+				orderItemId: "",
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := orderService.DeleteOrderItem(tt.args.ctx, tt.args.orderId, tt.args.orderItemId); (err != nil) != tt.wantErr {
 				t.Errorf("OrderService.DeleteOrderItem() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestOrderService_UpdateOrderStatus(t *testing.T) {
+	ctx := context.Background()
+
+	firebase := db.NewFirebaseService()
+	firestoreClient, err := firebase.GetApp().Firestore(ctx)
+	if err != nil {
+		t.Fatalf("failed to create firestore client: %v", err)
+	}
+	defer firestoreClient.Close()
+
+	firestoreService := db.NewFirestoreService(firestoreClient)
+	orderService := db.NewOrderService(firestoreService)
+
+	testOrder, err := orderService.CreateOrder(ctx, &service.Order{
+		CustomerId: "customer-1",
+		Items: []*service.OrderItem{
+			{
+				ProductId: "product-1",
+				Quantity:  1,
+				UpdatedAt: time.Now().Format(time.RFC3339),
+				CreatedAt: time.Now().Format(time.RFC3339),
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to create test order: %v", err)
+	}
+	defer deleteTestOrder(t, ctx, orderService, testOrder.Id)
+
+	type args struct {
+		ctx     context.Context
+		orderId string
+		status  service.OrderStatus
+	}
+	tests := []struct {
+		name string
+
+		args    args
+		want    *service.Order
+		wantErr bool
+	}{
+		{
+			name: "Update Order Status Success",
+			args: args{
+				ctx:     ctx,
+				orderId: testOrder.Id,
+				status:  service.OrderStatusPaid,
+			},
+			want: &service.Order{
+				Id:          testOrder.Id,
+				CustomerId:  "customer-1",
+				OrderStatus: service.OrderStatusPaid,
+				Items: []*service.OrderItem{
+					{
+						Id:        testOrder.Items[0].Id,
+						ProductId: "product-1",
+						Quantity:  1,
+						UpdatedAt: time.Now().Format(time.RFC3339),
+						CreatedAt: time.Now().Format(time.RFC3339),
+					},
+				},
+				UpdatedAt: testOrder.UpdatedAt,
+				CreatedAt: testOrder.CreatedAt,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			got, err := orderService.UpdateOrderStatus(tt.args.ctx, tt.args.orderId, tt.args.status)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("OrderService.UpdateOrderStatus() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != nil {
+				// Clear out the fields that are set by the DB
+				defer deleteTestOrder(t, ctx, orderService, got.Id)
+
+				got.Id = ""
+				got.CreatedAt = ""
+				got.UpdatedAt = ""
+				for _, item := range got.Items {
+					item.Id = ""
+					item.CreatedAt = ""
+					item.UpdatedAt = ""
+				}
+			}
+
+			if tt.want != nil {
+				tt.want.Id = ""
+				tt.want.CreatedAt = ""
+				tt.want.UpdatedAt = ""
+				for _, item := range tt.want.Items {
+					item.Id = ""
+					item.CreatedAt = ""
+					item.UpdatedAt = ""
+				}
+			}
+
+			// Convert structs to JSON for easier comparison
+			gotJSON, err := json.Marshal(got)
+			if err != nil {
+				t.Errorf("OrderService.UpdateOrderStatus() error = %v", err)
+			}
+			wantJSON, _ := json.Marshal(tt.want)
+			if err != nil {
+				t.Errorf("OrderService.UpdateOrderStatus() error = %v", err)
+			}
+
+			if string(gotJSON) != string(wantJSON) {
+				t.Errorf("OrderService.UpdateOrderStatus() = %s, want %v", string(gotJSON), string(wantJSON))
 			}
 		})
 	}
