@@ -243,10 +243,9 @@ message UpdateOrderStatusRequest {
 message UpdateOrderStatusResponse {
     string id = 1;
     string customer_id = 2;
-    repeated OrderItem order_items = 3;
-    OrderStatus status = 4;
-    google.protobuf.Timestamp created_at = 5;
-    google.protobuf.Timestamp updated_at = 6;
+    OrderStatus status = 3;
+    google.protobuf.Timestamp created_at = 4;
+    google.protobuf.Timestamp updated_at = 5;
 }
 
 message DeleteOrderRequest {

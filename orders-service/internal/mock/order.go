@@ -9,14 +9,14 @@ import (
 var _ service.OrderService = (*OrderService)(nil)
 
 type OrderService struct {
-	CreateOrderFunc  func(ctx context.Context, order *service.Order) (*service.Order, error)
-	GetOrderFunc     func(ctx context.Context, id string) (*service.Order, error)
-	ListOrdersFunc   func(ctx context.Context) ([]*service.Order, error)
+	CreateOrderFunc       func(ctx context.Context, order *service.Order) (*service.Order, error)
+	GetOrderFunc          func(ctx context.Context, id string) (*service.Order, error)
+	ListOrdersFunc        func(ctx context.Context) ([]*service.Order, error)
 	UpdateOrderStatusFunc func(ctx context.Context, id string, status service.OrderStatus) (*service.Order, error)
-	DeleteOrderFunc  func(ctx context.Context, id string) error
+	DeleteOrderFunc       func(ctx context.Context, id string) error
 
 	CreateOrderItemFunc func(ctx context.Context, orderId string, item *service.OrderItem) (*service.OrderItem, error)
-	GetOrderItemFunc    func(ctx context.Context, orderId string, itemId string) (*service.OrderItem, error)
+	GetOrderItemFunc    func(ctx context.Context, orderId, itemId string) (*service.OrderItem, error)
 	ListOrderItemsFunc  func(ctx context.Context, orderId string) ([]*service.OrderItem, error)
 	UpdateOrderItemFunc func(
 		ctx context.Context, orderId string, itemId string, update *service.OrderItemUpdate) (*service.OrderItem, error)

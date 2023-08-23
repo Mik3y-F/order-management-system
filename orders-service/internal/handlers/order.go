@@ -93,7 +93,9 @@ func (s *GRPCServer) UpdateOrderStatus(
 	}
 
 	return &pb.UpdateOrderStatusResponse{
-		Id: order.Id,
+		Id:         order.Id,
+		CustomerId: order.CustomerId,
+		Status:     getGRPCOrderStatus(order.OrderStatus),
 	}, nil
 }
 
@@ -137,7 +139,8 @@ func (s *GRPCServer) GetOrderItem(ctx context.Context, in *pb.GetOrderItemReques
 	}, nil
 }
 
-func (s *GRPCServer) ListOrderItems(ctx context.Context, in *pb.ListOrderItemsRequest) (*pb.ListOrderItemsResponse, error) {
+func (s *GRPCServer) ListOrderItems(
+	ctx context.Context, in *pb.ListOrderItemsRequest) (*pb.ListOrderItemsResponse, error) {
 
 	orderItems, err := s.OrderService.ListOrderItems(ctx, in.GetOrderId())
 	if err != nil {
@@ -158,7 +161,8 @@ func (s *GRPCServer) ListOrderItems(ctx context.Context, in *pb.ListOrderItemsRe
 	}, nil
 }
 
-func (s *GRPCServer) UpdateOrderItem(ctx context.Context, in *pb.UpdateOrderItemRequest) (*pb.UpdateOrderItemResponse, error) {
+func (s *GRPCServer) UpdateOrderItem(
+	ctx context.Context, in *pb.UpdateOrderItemRequest) (*pb.UpdateOrderItemResponse, error) {
 
 	var quantity *uint
 	if in.GetUpdate().GetQuantity() > 0 {
@@ -179,7 +183,8 @@ func (s *GRPCServer) UpdateOrderItem(ctx context.Context, in *pb.UpdateOrderItem
 	}, nil
 }
 
-func (s *GRPCServer) DeleteOrderItem(ctx context.Context, in *pb.DeleteOrderItemRequest) (*pb.DeleteOrderItemResponse, error) {
+func (s *GRPCServer) DeleteOrderItem(
+	ctx context.Context, in *pb.DeleteOrderItemRequest) (*pb.DeleteOrderItemResponse, error) {
 
 	err := s.OrderService.DeleteOrderItem(ctx, in.GetOrderId(), in.GetId())
 	if err != nil {

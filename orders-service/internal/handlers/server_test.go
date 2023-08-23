@@ -22,6 +22,7 @@ type TestGRPCServer struct {
 	// Add mock services here
 	ProductService  mock.ProductService
 	CustomerService mock.CustomerService
+	OrderService    mock.OrderService
 }
 
 func NewTestGRPCServer(tb testing.TB) *TestGRPCServer {
@@ -32,6 +33,7 @@ func NewTestGRPCServer(tb testing.TB) *TestGRPCServer {
 	// Set mock services here
 	s.GRPCServer.ProductService = &s.ProductService
 	s.GRPCServer.CustomerService = &s.CustomerService
+	s.GRPCServer.OrderService = &s.OrderService
 
 	return s
 }
