@@ -46,9 +46,11 @@ func main() {
 
 	productService := db.NewProductService(firestoreService)
 	customerService := db.NewCustomerService(firestoreService)
+	orderService := db.NewOrderService(firestoreService)
 
 	s.ProductService = productService
 	s.CustomerService = customerService
+	s.OrderService = orderService
 
 	if err := s.Run(ctx, bindAddress, port); err != nil {
 		log.Fatalf("failed to serve: %v", err)
