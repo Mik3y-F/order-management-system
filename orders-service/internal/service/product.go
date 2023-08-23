@@ -12,9 +12,9 @@ type Product struct {
 }
 
 type ProductUpdate struct {
-	Name        string
-	Description string
-	Price       uint
+	Name        *string
+	Description *string
+	Price       *uint
 }
 
 type ProductService interface {

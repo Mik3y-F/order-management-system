@@ -126,9 +126,17 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id string, update *s
 		return nil, getErr
 	}
 
-	product.Name = update.Name
-	product.Description = update.Description
-	product.Price = update.Price
+	if p := update.Name; p != nil {
+		product.Name = *p
+	}
+
+	if p := update.Description; p != nil {
+		product.Description = *p
+	}
+
+	if p := update.Price; p != nil {
+		product.Price = *p
+	}
 
 	err := product.Validate()
 	if err != nil {

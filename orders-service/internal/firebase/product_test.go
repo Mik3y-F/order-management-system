@@ -8,6 +8,7 @@ import (
 
 	db "github.com/Mik3y-F/order-management-system/orders/internal/firebase"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
 func deleteTestProduct(t *testing.T, ctx context.Context, productService service.ProductService, id string) {
@@ -301,9 +302,9 @@ func TestProductService_UpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				id:  p.Id,
 				update: &service.ProductUpdate{
-					Name:        "Updated Test Product",
-					Description: "Updated Test Description",
-					Price:       200,
+					Name:        pkg.StringPtr("Updated Test Product"),
+					Description: pkg.StringPtr("Updated Test Description"),
+					Price:       pkg.UintPtr(200),
 				},
 			},
 			want: &service.Product{
@@ -322,9 +323,9 @@ func TestProductService_UpdateProduct(t *testing.T) {
 				ctx: context.Background(),
 				id:  p.Id,
 				update: &service.ProductUpdate{
-					Name:        "",
-					Description: "Updated Test Description",
-					Price:       200,
+					Name:        pkg.StringPtr(""),
+					Description: pkg.StringPtr("Updated Test Description"),
+					Price:       pkg.UintPtr(200),
 				},
 			},
 			want:    nil,
