@@ -351,7 +351,7 @@ func (s *OrderService) unmarshallOrderItems(items []*OrderItemModel) []*service.
 func (s *OrderService) marshallOrderItem(item *service.OrderItem) *OrderItemModel {
 	return &OrderItemModel{
 		ProductId: item.ProductId,
-		Quantity:  item.Quantity,
+		Quantity:  int(item.Quantity),
 		CreatedAt: item.CreatedAt,
 		UpdatedAt: item.UpdatedAt,
 	}
@@ -360,7 +360,7 @@ func (s *OrderService) marshallOrderItem(item *service.OrderItem) *OrderItemMode
 func (s *OrderService) unmarshallOrderItem(item *OrderItemModel) *service.OrderItem {
 	return &service.OrderItem{
 		ProductId: item.ProductId,
-		Quantity:  item.Quantity,
+		Quantity:  uint(item.Quantity),
 		CreatedAt: item.CreatedAt,
 		UpdatedAt: item.UpdatedAt,
 	}

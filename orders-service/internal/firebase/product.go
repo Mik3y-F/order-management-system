@@ -139,7 +139,7 @@ func (s *ProductService) marshallProduct(product *service.Product) *ProductModel
 	return &ProductModel{
 		Name:        product.Name,
 		Description: product.Description,
-		Price:       product.Price,
+		Price:       int(product.Price),
 		CreatedAt:   product.CreatedAt,
 		UpdatedAt:   product.UpdatedAt,
 	}
@@ -149,7 +149,7 @@ func (s *ProductService) unmarshallProduct(productModel *ProductModel) *service.
 	return &service.Product{
 		Name:        productModel.Name,
 		Description: productModel.Description,
-		Price:       productModel.Price,
+		Price:       uint(productModel.Price),
 		CreatedAt:   productModel.CreatedAt,
 		UpdatedAt:   productModel.UpdatedAt,
 	}

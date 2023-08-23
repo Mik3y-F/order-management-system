@@ -83,8 +83,6 @@ func TestOrderService_CreateOrder(t *testing.T) {
 						{
 							ProductId: "product-1",
 							Quantity:  1,
-							UpdatedAt: time.Now().Format(time.RFC3339),
-							CreatedAt: time.Now().Format(time.RFC3339),
 						},
 					},
 				},

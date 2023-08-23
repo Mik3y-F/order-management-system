@@ -3,7 +3,7 @@ package firebase
 type ProductModel struct {
 	Name        string `firestore:"name"`
 	Description string `firestore:"description"`
-	Price       uint   `firestore:"price"`
+	Price       int    `firestore:"price"`
 	CreatedAt   string `firestore:"created_at"`
 	UpdatedAt   string `firestore:"updated_at"`
 }
@@ -25,7 +25,7 @@ type OrderModel struct {
 
 type OrderItemModel struct {
 	ProductId string `firestore:"product_id"`
-	Quantity  uint   `firestore:"quantity"`
+	Quantity  int    `firestore:"quantity"`
 	CreatedAt string `firestore:"created_at"`
 	UpdatedAt string `firestore:"updated_at"`
 }
