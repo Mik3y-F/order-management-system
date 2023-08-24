@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/go-chi/chi/v5 v5.0.10 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/jwambugu/mpesa-golang-sdk v1.0.7 // indirect
 	golang.org/x/net v0.9.0 // indirect

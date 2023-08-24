@@ -1,4 +1,4 @@
-package handlers_test
+package grpc_test
 
 import (
 	"context"

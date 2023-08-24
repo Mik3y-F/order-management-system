@@ -1,4 +1,4 @@
-package handlers_test
+package grpc_test
 
 import (
 	"context"
@@ -7,8 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mik3y-F/order-management-system/payments/internal/handlers"
-	grpc_handlers "github.com/Mik3y-F/order-management-system/payments/internal/handlers"
+	ecom_grpc "github.com/Mik3y-F/order-management-system/payments/internal/handlers/grpc"
 	"github.com/Mik3y-F/order-management-system/payments/internal/mock"
 )
 
@@ -17,7 +16,7 @@ const (
 )
 
 type TestGRPCServer struct {
-	*grpc_handlers.GRPCServer
+	*ecom_grpc.GRPCServer
 
 	// Add mock services here
 	PaymentsService mock.PaymentsService
@@ -25,7 +24,7 @@ type TestGRPCServer struct {
 
 func NewTestGRPCServer(tb testing.TB) *TestGRPCServer {
 	s := &TestGRPCServer{
-		GRPCServer: grpc_handlers.NewGRPCServer(),
+		GRPCServer: ecom_grpc.NewGRPCServer(),
 	}
 
 	// Set mock services here
@@ -57,7 +56,7 @@ func TestGRPCServer_Run(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := handlers.NewGRPCServer()
+			server := ecom_grpc.NewGRPCServer()
 			errCh := make(chan error)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

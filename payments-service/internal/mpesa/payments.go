@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Mik3y-F/order-management-system/payments/internal/repository"
 	"github.com/Mik3y-F/order-management-system/payments/internal/service"
 	"github.com/Mik3y-F/order-management-system/pkg"
 	"github.com/jwambugu/mpesa-golang-sdk"
+
+	orders "github.com/Mik3y-F/order-management-system/orders/pkg/client"
 )
 
 const (
@@ -17,12 +20,16 @@ const (
 var _ service.PaymentsService = (*PaymentsService)(nil)
 
 type PaymentsService struct {
-	mpesa *Mpesa
+	mpesa        *Mpesa
+	db           repository.PaymentsRepository
+	ordersClient orders.OrdersClient
 }
 
-func NewPaymentsService(mpesa *Mpesa) *PaymentsService {
+func NewPaymentsService(
+	mpesa *Mpesa, orderClient orders.OrdersClient, db repository.PaymentsRepository) *PaymentsService {
 	return &PaymentsService{
-		mpesa: mpesa,
+		mpesa:        mpesa,
+		ordersClient: orderClient,
 	}
 }
 
@@ -43,9 +50,32 @@ func (s *PaymentsService) ProcessPayment(ctx context.Context, payment *service.P
 
 	passKey := pkg.MustGetEnv(MPESA_PASSKEY)
 
+	paymentID, err := s.db.CreatePayment(ctx, &repository.Payment{
+		Amount:      payment.Amount,
+		Phone:       fmt.Sprint(payment.PhoneNumber),
+		Reference:   payment.Reference,
+		Description: payment.Description,
+	})
+	if err != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to store payment record: %v", err)
+	}
+
+	_, err = s.ordersClient.UpdateOrderStatus(ctx, &orders.UpdateOrderStatusRequest{
+		Id:     "1",
+		Status: orders.OrderStatusPending,
+	})
+	if err != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to update order status: %v", err)
+	}
+
+	err = s.db.UpdatePaymentStatus(ctx, paymentID, repository.PaymentStatusPending)
+	if err != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to update payment status: %v", err)
+	}
+
 	stkPushRes, err := s.mpesa.app.STKPush(ctx, passKey, mpesa.STKPushRequest{
 		BusinessShortCode: businessShortCode,
-		TransactionType:   "CustomerBuyGoodsOnlines",
+		TransactionType:   "CustomerBuyGoodsOnline",
 		Amount:            payment.Amount,
 		PartyA:            payment.PhoneNumber,
 		PartyB:            businessShortCode,
@@ -65,4 +95,30 @@ func (s *PaymentsService) ProcessPayment(ctx context.Context, payment *service.P
 		CustomerMessage:   stkPushRes.CustomerMessage,
 	}, nil
 
+}
+
+func (s *PaymentsService) HandleMpesaCallback(ctx context.Context, callback *service.PaymentCallback) error {
+	s.CheckPreconditions()
+
+	if callback.ResultCode != 0 {
+		_, err := s.ordersClient.UpdateOrderStatus(ctx, &orders.UpdateOrderStatusRequest{
+			Id:     "1",
+			Status: orders.OrderStatusFailed,
+		})
+		if err != nil {
+			return service.Errorf(service.INTERNAL_ERROR, "failed to update order status(Failed): %v", err)
+		}
+
+		return service.Errorf(service.NOT_IMPLEMENTED_ERROR, "invalid request: %s", callback.ResultDesc)
+	}
+
+	_, err := s.ordersClient.UpdateOrderStatus(ctx, &orders.UpdateOrderStatusRequest{
+		Id:     "1",
+		Status: orders.OrderStatusPaid,
+	})
+	if err != nil {
+		return service.Errorf(service.INTERNAL_ERROR, "failed to update order status(Paid): %v", err)
+	}
+
+	return nil
 }

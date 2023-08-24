@@ -9,13 +9,12 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type HealthCheckRequest = pb.HealthCheckRequest
-type HealthCheckResponse = pb.HealthCheckResponse
+var _ OrdersClient = (*GrpcOrderClient)(nil)
 
 type OrdersClient interface {
 	HealthCheck(ctx context.Context, product *HealthCheckRequest) (*HealthCheckResponse, error)
+	UpdateOrderStatus(ctx context.Context, req *pb.UpdateOrderStatusRequest) (*pb.UpdateOrderStatusResponse, error)
 }
-
 type GrpcOrderClient struct {
 	conn   *grpc.ClientConn
 	client pb.OrdersClient

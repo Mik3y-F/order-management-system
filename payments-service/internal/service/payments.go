@@ -1,6 +1,10 @@
 package service
 
-import "context"
+import (
+	"context"
+
+	"github.com/jwambugu/mpesa-golang-sdk"
+)
 
 type Payment struct {
 	Id          string `json:"id"`
@@ -22,7 +26,10 @@ type PaymentResponse struct {
 	ResponseMessage   string `json:"ResponseMessage"`
 }
 
+// I know I know, this is a bit of a hack but it works for now
+type PaymentCallback = mpesa.STKCallback
+
 type PaymentsService interface {
 	ProcessPayment(ctx context.Context, payment *Payment) (*PaymentResponse, error)
-	// CheckPayment(ctx context.Context, id string) (*Payment, error)
+	HandleMpesaCallback(ctx context.Context, callback *PaymentCallback) error
 }

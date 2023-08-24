@@ -5,7 +5,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/Mik3y-F/order-management-system/payments/internal/handlers"
+	orders "github.com/Mik3y-F/order-management-system/orders/pkg/client"
+	db "github.com/Mik3y-F/order-management-system/payments/internal/firebase"
+	ecom_grpc "github.com/Mik3y-F/order-management-system/payments/internal/handlers/grpc"
 	"github.com/Mik3y-F/order-management-system/payments/internal/mpesa"
 )
 
@@ -33,10 +35,29 @@ func main() {
 		port = DEFAULT_PORT
 	}
 
-	s := handlers.NewGRPCServer()
+	s := ecom_grpc.NewGRPCServer()
 
 	mpesaService := mpesa.NewMpesaService()
-	paymentService := mpesa.NewPaymentsService(mpesaService)
+
+	// Setup order service client
+	conn, err := orders.ConnectToOrderService("localhost:50051")
+	if err != nil {
+		log.Fatalf("Failed to connect to order service: %v", err)
+	}
+	orderClient := orders.NewGrpcOrderClient(conn)
+
+	// Setup firebase client and firestore service
+	firebase := db.NewFirebaseService()
+	firestoreClient, err := firebase.GetApp().Firestore(ctx)
+	if err != nil {
+		log.Fatalf("failed to create firestore client: %v", err)
+	}
+	defer firestoreClient.Close()
+
+	firestoreService := db.NewFirestoreService(firestoreClient)
+	paymentRepository := db.NewPaymentsRepository(firestoreService)
+
+	paymentService := mpesa.NewPaymentsService(mpesaService, orderClient, paymentRepository)
 
 	// Register internal services
 	s.PaymentsService = paymentService

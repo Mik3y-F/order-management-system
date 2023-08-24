@@ -195,6 +195,7 @@ enum OrderStatus {
     PROCESSING = 2;
     PAID = 3;
     CANCELLED = 4;
+    FAILED = 5;
     UNKNOWN = -1;
 }
 

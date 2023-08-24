@@ -1,4 +1,4 @@
-SERVICES = orders-service
+SERVICES = orders-service payments-service
 
 default: lint test security coverage
 

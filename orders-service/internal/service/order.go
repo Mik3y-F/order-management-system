@@ -1,6 +1,10 @@
 package service
 
-import "context"
+import (
+	"context"
+
+	"github.com/Mik3y-F/order-management-system/orders/pkg"
+)
 
 type OrderItem struct {
 	Id        string `json:"id"`
@@ -26,22 +30,13 @@ type OrderItemUpdate struct {
 	Quantity *uint `json:"quantity"`
 }
 
-type OrderStatus string
-
-const (
-	OrderStatusNew        OrderStatus = "new"
-	OrderStatusPending    OrderStatus = "pending"
-	OrderStatusProcessing OrderStatus = "processing"
-	OrderStatusPaid       OrderStatus = "paid"
-)
-
 type Order struct {
-	Id          string       `json:"id"`
-	CustomerId  string       `json:"customer_id"`
-	Items       []*OrderItem `json:"items"`
-	OrderStatus OrderStatus  `json:"order_status"`
-	CreatedAt   string       `json:"created_at"`
-	UpdatedAt   string       `json:"updated_at"`
+	Id          string          `json:"id"`
+	CustomerId  string          `json:"customer_id"`
+	Items       []*OrderItem    `json:"items"`
+	OrderStatus pkg.OrderStatus `json:"order_status"`
+	CreatedAt   string          `json:"created_at"`
+	UpdatedAt   string          `json:"updated_at"`
 }
 
 func (o *Order) Validate() error {
@@ -69,7 +64,7 @@ type OrderService interface {
 	CreateOrder(ctx context.Context, order *Order) (*Order, error)
 	GetOrder(ctx context.Context, id string) (*Order, error)
 	ListOrders(ctx context.Context) ([]*Order, error)
-	UpdateOrderStatus(ctx context.Context, orderId string, status OrderStatus) (*Order, error)
+	UpdateOrderStatus(ctx context.Context, orderId string, status pkg.OrderStatus) (*Order, error)
 	DeleteOrder(ctx context.Context, id string) error
 
 	// OrderItem CRUD
