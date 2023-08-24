@@ -14,8 +14,13 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 )
 
-// ShutdownTimeout is the time given for outstanding requests to finish before shutdown.
-const ShutdownTimeout = 1 * time.Second
+const (
+	// ShutdownTimeout is the time given for outstanding requests to finish before shutdown.
+	ShutdownTimeout = 1 * time.Second
+	ReadTimeout     = 5 * time.Second
+	WriteTimeout    = 10 * time.Second
+	IdleTimeout     = 120 * time.Second
+)
 
 type HTTPServer struct {
 	ln     net.Listener
@@ -36,7 +41,11 @@ func NewHTTPServer() *HTTPServer {
 
 	s := &HTTPServer{
 		router: chi.NewRouter(),
-		server: &http.Server{},
+		server: &http.Server{
+			ReadTimeout:  ReadTimeout,
+			WriteTimeout: WriteTimeout,
+			IdleTimeout:  IdleTimeout,
+		},
 	}
 
 	s.router.Use(middleware.Logger)
@@ -100,7 +109,12 @@ func (s *HTTPServer) Open() (err error) {
 	// Begin serving requests on the listener. We use Serve() instead of
 	// ListenAndServe() because it allows us to check for listen errors (such
 	// as trying to use an already open port) synchronously.
-	go s.server.Serve(s.ln)
+	go func() {
+		err := s.server.Serve(s.ln)
+		if err != nil && err != http.ErrServerClosed {
+			panic(err)
+		}
+	}()
 
 	return nil
 }
@@ -112,21 +126,37 @@ func (s *HTTPServer) Close() error {
 	return s.server.Shutdown(ctx)
 }
 
-func (s *HTTPServer) serveHTTP(w http.ResponseWriter, r *http.Request) {
-
-	s.router.ServeHTTP(w, r)
-}
-
 // ListenAndServeTLSRedirect runs an HTTP server on port 80 to redirect users
 // to the TLS-enabled port 443 server.
 func ListenAndServeTLSRedirect(domain string) error {
-	return http.ListenAndServe(":80", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := &http.Server{
+		Addr:         ":80",
+		Handler:      http.HandlerFunc(redirectTLS(domain)),
+		ReadTimeout:  ReadTimeout,
+		WriteTimeout: WriteTimeout,
+		IdleTimeout:  IdleTimeout,
+	}
+
+	return server.ListenAndServe()
+}
+
+func redirectTLS(domain string) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "https://"+domain, http.StatusFound)
-	}))
+	}
 }
 
 // ListenAndServeDebug runs an HTTP server with /debug endpoints (e.g. pprof, vars).
 func ListenAndServeDebug() error {
-	h := http.NewServeMux()
-	return http.ListenAndServe(":6060", h)
+	mux := http.NewServeMux()
+
+	server := &http.Server{
+		Addr:         ":6060",
+		Handler:      mux,
+		ReadTimeout:  ReadTimeout,
+		WriteTimeout: WriteTimeout,
+		IdleTimeout:  IdleTimeout,
+	}
+
+	return server.ListenAndServe()
 }
