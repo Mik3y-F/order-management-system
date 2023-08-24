@@ -7,6 +7,7 @@ import (
 
 	pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
 const (
@@ -106,7 +107,7 @@ func mockGetOrderFunc(ctx context.Context, id string) (*service.Order, error) {
 	return &service.Order{
 		Id:          "1",
 		CustomerId:  "1",
-		OrderStatus: service.OrderStatusNew,
+		OrderStatus: pkg.OrderStatusNew,
 		Items: []*service.OrderItem{
 			{
 				ProductId: "1",
@@ -182,7 +183,7 @@ func mockListOrdersFunc(ctx context.Context) ([]*service.Order, error) {
 		{
 			Id:          "1",
 			CustomerId:  "1",
-			OrderStatus: service.OrderStatusNew,
+			OrderStatus: pkg.OrderStatusNew,
 			Items: []*service.OrderItem{
 				{
 					ProductId: "1",
@@ -246,7 +247,7 @@ func TestGRPCServer_ListOrders(t *testing.T) {
 	}
 }
 
-func mockUpdateOrderStatusFunc(ctx context.Context, id string, status service.OrderStatus) (*service.Order, error) {
+func mockUpdateOrderStatusFunc(ctx context.Context, id string, status pkg.OrderStatus) (*service.Order, error) {
 	if id == ERROR_ORDER_TRIGGER {
 		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}

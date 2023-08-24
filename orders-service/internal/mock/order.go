@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
 var _ service.OrderService = (*OrderService)(nil)
@@ -12,7 +13,7 @@ type OrderService struct {
 	CreateOrderFunc       func(ctx context.Context, order *service.Order) (*service.Order, error)
 	GetOrderFunc          func(ctx context.Context, id string) (*service.Order, error)
 	ListOrdersFunc        func(ctx context.Context) ([]*service.Order, error)
-	UpdateOrderStatusFunc func(ctx context.Context, id string, status service.OrderStatus) (*service.Order, error)
+	UpdateOrderStatusFunc func(ctx context.Context, id string, status pkg.OrderStatus) (*service.Order, error)
 	DeleteOrderFunc       func(ctx context.Context, id string) error
 
 	CreateOrderItemFunc func(ctx context.Context, orderId string, item *service.OrderItem) (*service.OrderItem, error)
@@ -36,7 +37,7 @@ func (m *OrderService) ListOrders(ctx context.Context) ([]*service.Order, error)
 }
 
 func (m *OrderService) UpdateOrderStatus(
-	ctx context.Context, id string, status service.OrderStatus) (*service.Order, error) {
+	ctx context.Context, id string, status pkg.OrderStatus) (*service.Order, error) {
 	return m.UpdateOrderStatusFunc(ctx, id, status)
 }
 

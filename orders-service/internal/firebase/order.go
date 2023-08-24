@@ -6,6 +6,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/pkg"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -44,7 +45,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, order *service.Order) (*
 	order.CreatedAt = currentTime.Format(time.RFC3339)
 	order.UpdatedAt = currentTime.Format(time.RFC3339)
 
-	order.OrderStatus = service.OrderStatusNew
+	order.OrderStatus = pkg.OrderStatusNew
 
 	err := order.Validate()
 	if err != nil {
@@ -140,7 +141,7 @@ func (s *OrderService) ListOrders(ctx context.Context) ([]*service.Order, error)
 }
 
 func (s *OrderService) UpdateOrderStatus(
-	ctx context.Context, orderId string, status service.OrderStatus) (*service.Order, error) {
+	ctx context.Context, orderId string, status pkg.OrderStatus) (*service.Order, error) {
 	s.CheckPreconditions()
 
 	order, err := s.GetOrder(ctx, orderId)
@@ -374,7 +375,7 @@ func (s *OrderService) unmarshallOrder(order *OrderModel) *service.Order {
 	return &service.Order{
 		CustomerId:  order.CustomerId,
 		Items:       s.unmarshallOrderItems(order.Items),
-		OrderStatus: service.OrderStatus(order.OrderStatus),
+		OrderStatus: pkg.OrderStatus(order.OrderStatus),
 		CreatedAt:   order.CreatedAt,
 		UpdatedAt:   order.UpdatedAt,
 	}

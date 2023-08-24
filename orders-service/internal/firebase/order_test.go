@@ -9,6 +9,7 @@ import (
 
 	db "github.com/Mik3y-F/order-management-system/orders/internal/firebase"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
 func deleteTestOrder(t *testing.T, ctx context.Context, orderService service.OrderService, id string) {
@@ -89,7 +90,7 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			},
 			want: &service.Order{
 				CustomerId:  "customer-1",
-				OrderStatus: service.OrderStatusNew,
+				OrderStatus: pkg.OrderStatusNew,
 				Items: []*service.OrderItem{
 					{
 						ProductId: "product-1",
@@ -122,7 +123,7 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			},
 			want: &service.Order{
 				CustomerId:  "customer-1",
-				OrderStatus: service.OrderStatusNew,
+				OrderStatus: pkg.OrderStatusNew,
 				Items: []*service.OrderItem{
 					{
 						ProductId: "product-1",
@@ -1069,7 +1070,7 @@ func TestOrderService_UpdateOrderStatus(t *testing.T) {
 	type args struct {
 		ctx     context.Context
 		orderId string
-		status  service.OrderStatus
+		status  pkg.OrderStatus
 	}
 	tests := []struct {
 		name string
@@ -1083,12 +1084,12 @@ func TestOrderService_UpdateOrderStatus(t *testing.T) {
 			args: args{
 				ctx:     ctx,
 				orderId: testOrder.Id,
-				status:  service.OrderStatusPaid,
+				status:  pkg.OrderStatusPaid,
 			},
 			want: &service.Order{
 				Id:          testOrder.Id,
 				CustomerId:  "customer-1",
-				OrderStatus: service.OrderStatusPaid,
+				OrderStatus: pkg.OrderStatusPaid,
 				Items: []*service.OrderItem{
 					{
 						Id:        testOrder.Items[0].Id,

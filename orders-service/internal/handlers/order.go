@@ -6,6 +6,7 @@ import (
 
 	pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
 func (s *GRPCServer) CreateOrder(ctx context.Context, in *pb.CreateOrderRequest) (*pb.CreateOrderResponse, error) {
@@ -194,32 +195,32 @@ func (s *GRPCServer) DeleteOrderItem(
 	return &pb.DeleteOrderItemResponse{}, nil
 }
 
-func getGRPCOrderStatus(status service.OrderStatus) pb.OrderStatus {
+func getGRPCOrderStatus(status pkg.OrderStatus) pb.OrderStatus {
 	switch status {
-	case service.OrderStatusNew:
+	case pkg.OrderStatusNew:
 		return pb.OrderStatus_NEW
-	case service.OrderStatusPending:
+	case pkg.OrderStatusPending:
 		return pb.OrderStatus_PENDING
-	case service.OrderStatusProcessing:
+	case pkg.OrderStatusProcessing:
 		return pb.OrderStatus_PROCESSING
-	case service.OrderStatusPaid:
+	case pkg.OrderStatusPaid:
 		return pb.OrderStatus_PAID
 	default:
 		return pb.OrderStatus_UNKNOWN
 	}
 }
 
-func getOrderStatus(status pb.OrderStatus) service.OrderStatus {
+func getOrderStatus(status pb.OrderStatus) pkg.OrderStatus {
 	switch status {
 	case pb.OrderStatus_NEW:
-		return service.OrderStatusNew
+		return pkg.OrderStatusNew
 	case pb.OrderStatus_PENDING:
-		return service.OrderStatusPending
+		return pkg.OrderStatusPending
 	case pb.OrderStatus_PROCESSING:
-		return service.OrderStatusProcessing
+		return pkg.OrderStatusProcessing
 	case pb.OrderStatus_PAID:
-		return service.OrderStatusPaid
+		return pkg.OrderStatusPaid
 	default:
-		return service.OrderStatusNew
+		return pkg.OrderStatusNew
 	}
 }
