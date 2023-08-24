@@ -91,6 +91,9 @@ func (s *CheckoutService) ProcessCheckout(ctx context.Context, orderId string) (
 	}
 
 	cost, err := s.GetOrderCost(ctx, orderId)
+	if err != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to get order cost: %v", err)
+	}
 	_, err = s.paymentsClient.ProcessMpesaPayment(ctx, &client.ProcessMpesaPaymentRequest{
 		OrderId:     orderId,
 		Amount:      uint32(cost),
