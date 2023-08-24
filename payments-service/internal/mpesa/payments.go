@@ -50,27 +50,12 @@ func (s *PaymentsService) ProcessPayment(ctx context.Context, payment *service.P
 
 	passKey := pkg.MustGetEnv(MPESA_PASSKEY)
 
-	paymentID, err := s.db.CreatePayment(ctx, &repository.Payment{
-		Amount:      payment.Amount,
-		Phone:       fmt.Sprint(payment.PhoneNumber),
-		Reference:   payment.Reference,
-		Description: payment.Description,
-	})
-	if err != nil {
-		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to store payment record: %v", err)
-	}
-
 	_, err = s.ordersClient.UpdateOrderStatus(ctx, &orders.UpdateOrderStatusRequest{
 		Id:     "1",
 		Status: orders.OrderStatusPending,
 	})
 	if err != nil {
 		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to update order status: %v", err)
-	}
-
-	err = s.db.UpdatePaymentStatus(ctx, paymentID, repository.PaymentStatusPending)
-	if err != nil {
-		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to update payment status: %v", err)
 	}
 
 	stkPushRes, err := s.mpesa.app.STKPush(ctx, passKey, mpesa.STKPushRequest{
@@ -88,6 +73,18 @@ func (s *PaymentsService) ProcessPayment(ctx context.Context, payment *service.P
 		return nil, fmt.Errorf("failed to process payment: %v", MpesaErrorToInternalError(err))
 	}
 
+	_, err = s.db.CreatePayment(ctx, &repository.Payment{
+		Amount:            payment.Amount,
+		Phone:             fmt.Sprint(payment.PhoneNumber),
+		Reference:         payment.Reference,
+		Description:       payment.Description,
+		MerchantRequestID: stkPushRes.MerchantRequestID,
+		Status:            repository.PaymentStatusPending,
+	})
+	if err != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to store payment record: %v", err)
+	}
+
 	return &service.PaymentResponse{
 		MerchantRequestID: stkPushRes.MerchantRequestID,
 		CheckoutRequestID: stkPushRes.CheckoutRequestID,
@@ -100,20 +97,30 @@ func (s *PaymentsService) ProcessPayment(ctx context.Context, payment *service.P
 func (s *PaymentsService) HandleMpesaCallback(ctx context.Context, callback *service.PaymentCallback) error {
 	s.CheckPreconditions()
 
+	payment, err := s.db.GetPaymentByMerchantRequestID(ctx, callback.MerchantRequestID)
+	if err != nil {
+		return service.Errorf(service.INTERNAL_ERROR, "failed to get payment: %v", err)
+	}
+
 	if callback.ResultCode != 0 {
 		_, err := s.ordersClient.UpdateOrderStatus(ctx, &orders.UpdateOrderStatusRequest{
-			Id:     "1",
+			Id:     payment.OrderID,
 			Status: orders.OrderStatusFailed,
 		})
 		if err != nil {
 			return service.Errorf(service.INTERNAL_ERROR, "failed to update order status(Failed): %v", err)
 		}
 
+		err = s.db.UpdatePaymentStatus(ctx, payment.Id, repository.PaymentStatusFailed)
+		if err != nil {
+			return service.Errorf(service.INTERNAL_ERROR, "failed to update payment status(Failed): %v", err)
+		}
+
 		return service.Errorf(service.NOT_IMPLEMENTED_ERROR, "invalid request: %s", callback.ResultDesc)
 	}
 
-	_, err := s.ordersClient.UpdateOrderStatus(ctx, &orders.UpdateOrderStatusRequest{
-		Id:     "1",
+	_, err = s.ordersClient.UpdateOrderStatus(ctx, &orders.UpdateOrderStatusRequest{
+		Id:     payment.OrderID,
 		Status: orders.OrderStatusPaid,
 	})
 	if err != nil {
