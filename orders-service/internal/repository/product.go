@@ -1,6 +1,10 @@
-package service
+package repository
 
-import "context"
+import (
+	"context"
+
+	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+)
 
 type Product struct {
 	Id          string
@@ -17,7 +21,7 @@ type ProductUpdate struct {
 	Price       *uint
 }
 
-type ProductService interface {
+type ProductRepository interface {
 	CreateProduct(ctx context.Context, product *Product) (*Product, error)
 	GetProduct(ctx context.Context, id string) (*Product, error)
 	ListProducts(ctx context.Context) ([]*Product, error)
@@ -27,7 +31,7 @@ type ProductService interface {
 
 func (p *Product) Validate() error {
 	if p.Name == "" {
-		return Errorf(INVALID_ERROR, "name is required")
+		return service.Errorf(service.INVALID_ERROR, "name is required")
 	}
 
 	return nil

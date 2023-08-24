@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
 	"google.golang.org/grpc"
 )
@@ -19,10 +20,12 @@ type GRPCServer struct {
 	grpcServer *grpc.Server
 	mu         sync.Mutex // synchronizes access to the grpcServer
 
-	// Internal services
-	ProductService  service.ProductService
-	CustomerService service.CustomerService
-	OrderService    service.OrderService
+	// Internal services &  repositories
+	CheckoutService service.CheckoutService
+
+	ProductRepository  repository.ProductRepository
+	CustomerRepository repository.CustomerRepository
+	OrderRepository    repository.OrderRepository
 }
 
 // NewGRPCServer creates a new instance of GRPCServer.

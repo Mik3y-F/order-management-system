@@ -8,12 +8,12 @@ import (
 	"time"
 
 	db "github.com/Mik3y-F/order-management-system/orders/internal/firebase"
-	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
-func deleteTestOrder(t *testing.T, ctx context.Context, orderService service.OrderService, id string) {
-	err := orderService.DeleteOrder(ctx, id)
+func deleteTestOrder(t *testing.T, ctx context.Context, orderRepository repository.OrderRepository, id string) {
+	err := orderRepository.DeleteOrder(ctx, id)
 	if err != nil {
 		t.Fatalf("failed to delete order: %v", err)
 	}
@@ -38,11 +38,11 @@ func TestOrderService_CheckPreconditions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := db.NewOrderService(tt.fields.db)
+			s := db.NewOrderRepository(tt.fields.db)
 			defer func() {
 				r := recover()
 				if (r != nil) != tt.wantPanic {
-					t.Errorf("OrderService.CheckPreconditions() panic = %v, wantPanic %v", r, tt.wantPanic)
+					t.Errorf("OrderRepository.CheckPreconditions() panic = %v, wantPanic %v", r, tt.wantPanic)
 				}
 			}()
 			s.CheckPreconditions()
@@ -62,25 +62,25 @@ func TestOrderService_CreateOrder(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	orderService := db.NewOrderService(firestoreService)
+	orderRepository := db.NewOrderRepository(firestoreService)
 
 	type args struct {
 		ctx   context.Context
-		order *service.Order
+		order *repository.Order
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *service.Order
+		want    *repository.Order
 		wantErr bool
 	}{
 		{
 			name: "Create Order Success",
 			args: args{
 				ctx: ctx,
-				order: &service.Order{
+				order: &repository.Order{
 					CustomerId: "customer-1",
-					Items: []*service.OrderItem{
+					Items: []*repository.OrderItem{
 						{
 							ProductId: "product-1",
 							Quantity:  1,
@@ -88,10 +88,10 @@ func TestOrderService_CreateOrder(t *testing.T) {
 					},
 				},
 			},
-			want: &service.Order{
+			want: &repository.Order{
 				CustomerId:  "customer-1",
 				OrderStatus: pkg.OrderStatusNew,
-				Items: []*service.OrderItem{
+				Items: []*repository.OrderItem{
 					{
 						ProductId: "product-1",
 						Quantity:  1,
@@ -107,9 +107,9 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			name: "Create Order Success - Multiple Items",
 			args: args{
 				ctx: ctx,
-				order: &service.Order{
+				order: &repository.Order{
 					CustomerId: "customer-1",
-					Items: []*service.OrderItem{
+					Items: []*repository.OrderItem{
 						{
 							ProductId: "product-1",
 							Quantity:  1,
@@ -121,10 +121,10 @@ func TestOrderService_CreateOrder(t *testing.T) {
 					},
 				},
 			},
-			want: &service.Order{
+			want: &repository.Order{
 				CustomerId:  "customer-1",
 				OrderStatus: pkg.OrderStatusNew,
-				Items: []*service.OrderItem{
+				Items: []*repository.OrderItem{
 					{
 						ProductId: "product-1",
 						Quantity:  1,
@@ -146,8 +146,8 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			name: "Create Order Error - Missing Customer ID",
 			args: args{
 				ctx: ctx,
-				order: &service.Order{
-					Items: []*service.OrderItem{
+				order: &repository.Order{
+					Items: []*repository.OrderItem{
 						{
 							ProductId: "product-1",
 							Quantity:  1,
@@ -162,7 +162,7 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			name: "Create Order Error - Missing Items",
 			args: args{
 				ctx: ctx,
-				order: &service.Order{
+				order: &repository.Order{
 					CustomerId: "customer-1",
 				},
 			},
@@ -172,15 +172,15 @@ func TestOrderService_CreateOrder(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := orderService.CreateOrder(tt.args.ctx, tt.args.order)
+			got, err := orderRepository.CreateOrder(tt.args.ctx, tt.args.order)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("OrderService.CreateOrder() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("OrderRepository.CreateOrder() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			if got != nil {
 				// Clear out the fields that are set by the DB
-				defer deleteTestOrder(t, ctx, orderService, got.Id)
+				defer deleteTestOrder(t, ctx, orderRepository, got.Id)
 
 				got.Id = ""
 				got.CreatedAt = ""
@@ -206,15 +206,15 @@ func TestOrderService_CreateOrder(t *testing.T) {
 			// Convert structs to JSON for easier comparison
 			gotJSON, err := json.Marshal(got)
 			if err != nil {
-				t.Errorf("OrderService.CreateOrder() error = %v", err)
+				t.Errorf("OrderRepository.CreateOrder() error = %v", err)
 			}
 			wantJSON, _ := json.Marshal(tt.want)
 			if err != nil {
-				t.Errorf("OrderService.CreateOrder() error = %v", err)
+				t.Errorf("OrderRepository.CreateOrder() error = %v", err)
 			}
 
 			if string(gotJSON) != string(wantJSON) {
-				t.Errorf("OrderService.CreateOrder() = %s, want %v", string(gotJSON), string(wantJSON))
+				t.Errorf("OrderRepository.CreateOrder() = %s, want %v", string(gotJSON), string(wantJSON))
 			}
 		})
 	}
@@ -231,11 +231,11 @@ func TestOrderService_GetOrder(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	orderService := db.NewOrderService(firestoreService)
+	orderRepository := db.NewOrderRepository(firestoreService)
 
-	testOrder, err := orderService.CreateOrder(ctx, &service.Order{
+	testOrder, err := orderRepository.CreateOrder(ctx, &repository.Order{
 		CustomerId: "customer-1",
-		Items: []*service.OrderItem{
+		Items: []*repository.OrderItem{
 			{
 				ProductId: "product-1",
 				Quantity:  1,
@@ -247,7 +247,7 @@ func TestOrderService_GetOrder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create test order: %v", err)
 	}
-	defer deleteTestOrder(t, ctx, orderService, testOrder.Id)
+	defer deleteTestOrder(t, ctx, orderRepository, testOrder.Id)
 
 	type args struct {
 		ctx context.Context
@@ -256,7 +256,7 @@ func TestOrderService_GetOrder(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *service.Order
+		want    *repository.Order
 		wantErr bool
 	}{
 		{
@@ -280,23 +280,23 @@ func TestOrderService_GetOrder(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := orderService.GetOrder(tt.args.ctx, tt.args.id)
+			got, err := orderRepository.GetOrder(tt.args.ctx, tt.args.id)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("OrderService.GetOrder() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("OrderRepository.GetOrder() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			// Convert structs to JSON for easier comparison
 			gotJSON, err := json.Marshal(got)
 			if err != nil {
-				t.Errorf("OrderService.GetOrder() error = %v", err)
+				t.Errorf("OrderRepository.GetOrder() error = %v", err)
 			}
 			wantJSON, _ := json.Marshal(tt.want)
 			if err != nil {
-				t.Errorf("OrderService.GetOrder() error = %v", err)
+				t.Errorf("OrderRepository.GetOrder() error = %v", err)
 			}
 
 			if string(gotJSON) != string(wantJSON) {
-				t.Errorf("OrderService.GetOrder() = %v, want %v", string(gotJSON), string(wantJSON))
+				t.Errorf("OrderRepository.GetOrder() = %v, want %v", string(gotJSON), string(wantJSON))
 			}
 		})
 	}
@@ -313,11 +313,11 @@ func TestOrderService_ListOrders(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	orderService := db.NewOrderService(firestoreService)
+	orderRepository := db.NewOrderRepository(firestoreService)
 
-	testOrder, err := orderService.CreateOrder(ctx, &service.Order{
+	testOrder, err := orderRepository.CreateOrder(ctx, &repository.Order{
 		CustomerId: "customer-1",
-		Items: []*service.OrderItem{
+		Items: []*repository.OrderItem{
 			{
 				ProductId: "product-1",
 				Quantity:  1,
@@ -327,7 +327,7 @@ func TestOrderService_ListOrders(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create test order: %v", err)
 	}
-	defer deleteTestOrder(t, ctx, orderService, testOrder.Id)
+	defer deleteTestOrder(t, ctx, orderRepository, testOrder.Id)
 
 	type args struct {
 		ctx context.Context
@@ -335,7 +335,7 @@ func TestOrderService_ListOrders(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []*service.Order
+		want    []*repository.Order
 		wantErr bool
 	}{
 		{
@@ -343,7 +343,7 @@ func TestOrderService_ListOrders(t *testing.T) {
 			args: args{
 				ctx: ctx,
 			},
-			want: []*service.Order{
+			want: []*repository.Order{
 				testOrder,
 			},
 			wantErr: false,
@@ -351,24 +351,24 @@ func TestOrderService_ListOrders(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := orderService.ListOrders(tt.args.ctx)
+			got, err := orderRepository.ListOrders(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("OrderService.ListOrders() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("OrderRepository.ListOrders() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			// Convert structs to JSON for easier comparison
 			gotJSON, err := json.Marshal(got)
 			if err != nil {
-				t.Errorf("OrderService.ListOrders() error = %v", err)
+				t.Errorf("OrderRepository.ListOrders() error = %v", err)
 			}
 			wantJSON, _ := json.Marshal(tt.want)
 			if err != nil {
-				t.Errorf("OrderService.ListOrders() error = %v", err)
+				t.Errorf("OrderRepository.ListOrders() error = %v", err)
 			}
 
 			if string(gotJSON) != string(wantJSON) {
-				t.Errorf("OrderService.ListOrders() = %v, want %v", string(gotJSON), string(wantJSON))
+				t.Errorf("OrderRepository.ListOrders() = %v, want %v", string(gotJSON), string(wantJSON))
 			}
 		})
 	}
@@ -385,11 +385,11 @@ func TestOrderService_DeleteOrder(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	orderService := db.NewOrderService(firestoreService)
+	orderRepository := db.NewOrderRepository(firestoreService)
 
-	testOrder, err := orderService.CreateOrder(ctx, &service.Order{
+	testOrder, err := orderRepository.CreateOrder(ctx, &repository.Order{
 		CustomerId: "customer-1",
-		Items: []*service.OrderItem{
+		Items: []*repository.OrderItem{
 			{
 				ProductId: "product-1",
 				Quantity:  1,
@@ -401,7 +401,7 @@ func TestOrderService_DeleteOrder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create test order: %v", err)
 	}
-	defer deleteTestOrder(t, ctx, orderService, testOrder.Id)
+	defer deleteTestOrder(t, ctx, orderRepository, testOrder.Id)
 
 	type args struct {
 		ctx context.Context
@@ -425,8 +425,8 @@ func TestOrderService_DeleteOrder(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := orderService.DeleteOrder(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
-				t.Errorf("OrderService.DeleteOrder() error = %v, wantErr %v", err, tt.wantErr)
+			if err := orderRepository.DeleteOrder(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
+				t.Errorf("OrderRepository.DeleteOrder() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -444,11 +444,11 @@ func TestOrderService_CreateOrderItem(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	orderService := db.NewOrderService(firestoreService)
+	orderRepository := db.NewOrderRepository(firestoreService)
 
-	testOrder, err := orderService.CreateOrder(ctx, &service.Order{
+	testOrder, err := orderRepository.CreateOrder(ctx, &repository.Order{
 		CustomerId: "customer-1",
-		Items: []*service.OrderItem{
+		Items: []*repository.OrderItem{
 			{
 				ProductId: "product-1",
 				Quantity:  1,
@@ -460,17 +460,17 @@ func TestOrderService_CreateOrderItem(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create test order: %v", err)
 	}
-	defer deleteTestOrder(t, ctx, orderService, testOrder.Id)
+	defer deleteTestOrder(t, ctx, orderRepository, testOrder.Id)
 
 	type args struct {
 		ctx       context.Context
 		orderId   string
-		orderItem *service.OrderItem
+		orderItem *repository.OrderItem
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *service.OrderItem
+		want    *repository.OrderItem
 		wantErr bool
 	}{
 		{
@@ -478,12 +478,12 @@ func TestOrderService_CreateOrderItem(t *testing.T) {
 			args: args{
 				ctx:     ctx,
 				orderId: testOrder.Id,
-				orderItem: &service.OrderItem{
+				orderItem: &repository.OrderItem{
 					ProductId: "product-2",
 					Quantity:  1,
 				},
 			},
-			want: &service.OrderItem{
+			want: &repository.OrderItem{
 				ProductId: "product-2",
 				Quantity:  1,
 				UpdatedAt: time.Now().Format(time.RFC3339),
@@ -495,7 +495,7 @@ func TestOrderService_CreateOrderItem(t *testing.T) {
 			args: args{
 				ctx:       ctx,
 				orderId:   "",
-				orderItem: &service.OrderItem{},
+				orderItem: &repository.OrderItem{},
 			},
 			want:    nil,
 			wantErr: true,
@@ -505,7 +505,7 @@ func TestOrderService_CreateOrderItem(t *testing.T) {
 			args: args{
 				ctx:     ctx,
 				orderId: testOrder.Id,
-				orderItem: &service.OrderItem{
+				orderItem: &repository.OrderItem{
 					Quantity: 1,
 				},
 			},
@@ -517,7 +517,7 @@ func TestOrderService_CreateOrderItem(t *testing.T) {
 			args: args{
 				ctx:     ctx,
 				orderId: testOrder.Id,
-				orderItem: &service.OrderItem{
+				orderItem: &repository.OrderItem{
 					ProductId: "product-2",
 				},
 			},
@@ -528,9 +528,9 @@ func TestOrderService_CreateOrderItem(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// no need to delete the order item as it will be deleted when the order is deleted
-			got, err := orderService.CreateOrderItem(tt.args.ctx, tt.args.orderId, tt.args.orderItem)
+			got, err := orderRepository.CreateOrderItem(tt.args.ctx, tt.args.orderId, tt.args.orderItem)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("OrderService.CreateOrderItem() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("OrderRepository.CreateOrderItem() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -543,7 +543,7 @@ func TestOrderService_CreateOrderItem(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("OrderService.CreateOrderItem() = %v, want %v", got, tt.want)
+				t.Errorf("OrderRepository.CreateOrderItem() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -560,11 +560,11 @@ func TestOrderService_CreateOrderItems(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	orderService := db.NewOrderService(firestoreService)
+	orderRepository := db.NewOrderRepository(firestoreService)
 
-	testOrder, err := orderService.CreateOrder(ctx, &service.Order{
+	testOrder, err := orderRepository.CreateOrder(ctx, &repository.Order{
 		CustomerId: "customer-1",
-		Items: []*service.OrderItem{
+		Items: []*repository.OrderItem{
 			{
 				ProductId: "product-1",
 				Quantity:  1,
@@ -576,17 +576,17 @@ func TestOrderService_CreateOrderItems(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create test order: %v", err)
 	}
-	defer deleteTestOrder(t, ctx, orderService, testOrder.Id)
+	defer deleteTestOrder(t, ctx, orderRepository, testOrder.Id)
 
 	type args struct {
 		ctx        context.Context
 		orderId    string
-		orderItems []*service.OrderItem
+		orderItems []*repository.OrderItem
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    []*service.OrderItem
+		want    []*repository.OrderItem
 		wantErr bool
 	}{
 		{
@@ -594,7 +594,7 @@ func TestOrderService_CreateOrderItems(t *testing.T) {
 			args: args{
 				ctx:     ctx,
 				orderId: testOrder.Id,
-				orderItems: []*service.OrderItem{
+				orderItems: []*repository.OrderItem{
 					{
 						ProductId: "product-2",
 						Quantity:  1,
@@ -605,7 +605,7 @@ func TestOrderService_CreateOrderItems(t *testing.T) {
 					},
 				},
 			},
-			want: []*service.OrderItem{
+			want: []*repository.OrderItem{
 				{
 					ProductId: "product-2",
 					Quantity:  1,
@@ -625,7 +625,7 @@ func TestOrderService_CreateOrderItems(t *testing.T) {
 			args: args{
 				ctx:        ctx,
 				orderId:    "",
-				orderItems: []*service.OrderItem{},
+				orderItems: []*repository.OrderItem{},
 			},
 			want:    nil,
 			wantErr: true,
@@ -635,7 +635,7 @@ func TestOrderService_CreateOrderItems(t *testing.T) {
 			args: args{
 				ctx:     ctx,
 				orderId: testOrder.Id,
-				orderItems: []*service.OrderItem{
+				orderItems: []*repository.OrderItem{
 					{
 						Quantity: 1,
 					},
@@ -649,7 +649,7 @@ func TestOrderService_CreateOrderItems(t *testing.T) {
 			args: args{
 				ctx:     ctx,
 				orderId: testOrder.Id,
-				orderItems: []*service.OrderItem{
+				orderItems: []*repository.OrderItem{
 					{
 						ProductId: "product-2",
 					},
@@ -661,9 +661,9 @@ func TestOrderService_CreateOrderItems(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := orderService.CreateOrderItems(tt.args.ctx, tt.args.orderId, tt.args.orderItems)
+			got, err := orderRepository.CreateOrderItems(tt.args.ctx, tt.args.orderId, tt.args.orderItems)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("OrderService.CreateOrderItems() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("OrderRepository.CreateOrderItems() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -682,15 +682,15 @@ func TestOrderService_CreateOrderItems(t *testing.T) {
 			// Convert structs to JSON for easier comparison
 			gotJSON, err := json.Marshal(got)
 			if err != nil {
-				t.Errorf("OrderService.CreateOrderItems() error = %v", err)
+				t.Errorf("OrderRepository.CreateOrderItems() error = %v", err)
 			}
 			wantJSON, _ := json.Marshal(tt.want)
 			if err != nil {
-				t.Errorf("OrderService.CreateOrderItems() error = %v", err)
+				t.Errorf("OrderRepository.CreateOrderItems() error = %v", err)
 			}
 
 			if string(gotJSON) != string(wantJSON) {
-				t.Errorf("OrderService.CreateOrderItems() = %v, want %v", string(gotJSON), string(wantJSON))
+				t.Errorf("OrderRepository.CreateOrderItems() = %v, want %v", string(gotJSON), string(wantJSON))
 			}
 		})
 	}
@@ -707,11 +707,11 @@ func TestOrderService_GetOrderItem(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	orderService := db.NewOrderService(firestoreService)
+	orderRepository := db.NewOrderRepository(firestoreService)
 
-	testOrder, err := orderService.CreateOrder(ctx, &service.Order{
+	testOrder, err := orderRepository.CreateOrder(ctx, &repository.Order{
 		CustomerId: "customer-1",
-		Items: []*service.OrderItem{
+		Items: []*repository.OrderItem{
 			{
 				ProductId: "product-1",
 				Quantity:  1,
@@ -723,7 +723,7 @@ func TestOrderService_GetOrderItem(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create test order: %v", err)
 	}
-	defer deleteTestOrder(t, ctx, orderService, testOrder.Id)
+	defer deleteTestOrder(t, ctx, orderRepository, testOrder.Id)
 
 	type args struct {
 		ctx         context.Context
@@ -734,7 +734,7 @@ func TestOrderService_GetOrderItem(t *testing.T) {
 		name string
 
 		args    args
-		want    *service.OrderItem
+		want    *repository.OrderItem
 		wantErr bool
 	}{
 		{
@@ -769,13 +769,13 @@ func TestOrderService_GetOrderItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := orderService.GetOrderItem(tt.args.ctx, tt.args.orderId, tt.args.orderItemId)
+			got, err := orderRepository.GetOrderItem(tt.args.ctx, tt.args.orderId, tt.args.orderItemId)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("OrderService.GetOrderItem() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("OrderRepository.GetOrderItem() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("OrderService.GetOrderItem() = %v, want %v", got, tt.want)
+				t.Errorf("OrderRepository.GetOrderItem() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -792,11 +792,11 @@ func TestOrderService_ListOrderItems(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	orderService := db.NewOrderService(firestoreService)
+	orderRepository := db.NewOrderRepository(firestoreService)
 
-	testOrder, err := orderService.CreateOrder(ctx, &service.Order{
+	testOrder, err := orderRepository.CreateOrder(ctx, &repository.Order{
 		CustomerId: "customer-1",
-		Items: []*service.OrderItem{
+		Items: []*repository.OrderItem{
 			{
 				ProductId: "product-1",
 				Quantity:  1,
@@ -808,7 +808,7 @@ func TestOrderService_ListOrderItems(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create test order: %v", err)
 	}
-	defer deleteTestOrder(t, ctx, orderService, testOrder.Id)
+	defer deleteTestOrder(t, ctx, orderRepository, testOrder.Id)
 
 	type args struct {
 		ctx     context.Context
@@ -817,7 +817,7 @@ func TestOrderService_ListOrderItems(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []*service.OrderItem
+		want    []*repository.OrderItem
 		wantErr bool
 	}{
 		{
@@ -840,13 +840,13 @@ func TestOrderService_ListOrderItems(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := orderService.ListOrderItems(tt.args.ctx, tt.args.orderId)
+			got, err := orderRepository.ListOrderItems(tt.args.ctx, tt.args.orderId)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("OrderService.ListOrderItems() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("OrderRepository.ListOrderItems() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("OrderService.ListOrderItems() = %v, want %v", got, tt.want)
+				t.Errorf("OrderRepository.ListOrderItems() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -863,11 +863,11 @@ func TestOrderService_UpdateOrderItem(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	orderService := db.NewOrderService(firestoreService)
+	orderRepository := db.NewOrderRepository(firestoreService)
 
-	testOrder, err := orderService.CreateOrder(ctx, &service.Order{
+	testOrder, err := orderRepository.CreateOrder(ctx, &repository.Order{
 		CustomerId: "customer-1",
-		Items: []*service.OrderItem{
+		Items: []*repository.OrderItem{
 			{
 				ProductId: "product-1",
 				Quantity:  1,
@@ -879,18 +879,18 @@ func TestOrderService_UpdateOrderItem(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create test order: %v", err)
 	}
-	defer deleteTestOrder(t, ctx, orderService, testOrder.Id)
+	defer deleteTestOrder(t, ctx, orderRepository, testOrder.Id)
 
 	type args struct {
 		ctx         context.Context
 		orderId     string
 		orderItemId string
-		update      *service.OrderItemUpdate
+		update      *repository.OrderItemUpdate
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *service.OrderItem
+		want    *repository.OrderItem
 		wantErr bool
 	}{
 		{
@@ -899,11 +899,11 @@ func TestOrderService_UpdateOrderItem(t *testing.T) {
 				ctx:         ctx,
 				orderId:     testOrder.Id,
 				orderItemId: testOrder.Items[0].Id,
-				update: &service.OrderItemUpdate{
+				update: &repository.OrderItemUpdate{
 					Quantity: func(i uint) *uint { return &i }(2),
 				},
 			},
-			want: &service.OrderItem{
+			want: &repository.OrderItem{
 				Id:        testOrder.Items[0].Id,
 				ProductId: "product-1",
 				Quantity:  2,
@@ -917,7 +917,7 @@ func TestOrderService_UpdateOrderItem(t *testing.T) {
 				ctx:         ctx,
 				orderId:     "",
 				orderItemId: testOrder.Items[0].Id,
-				update: &service.OrderItemUpdate{
+				update: &repository.OrderItemUpdate{
 					Quantity: func(i uint) *uint { return &i }(2),
 				},
 			},
@@ -930,7 +930,7 @@ func TestOrderService_UpdateOrderItem(t *testing.T) {
 				ctx:         ctx,
 				orderId:     testOrder.Id,
 				orderItemId: "",
-				update: &service.OrderItemUpdate{
+				update: &repository.OrderItemUpdate{
 					Quantity: func(i uint) *uint { return &i }(2),
 				},
 			},
@@ -940,24 +940,24 @@ func TestOrderService_UpdateOrderItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := orderService.UpdateOrderItem(tt.args.ctx, tt.args.orderId, tt.args.orderItemId, tt.args.update)
+			got, err := orderRepository.UpdateOrderItem(tt.args.ctx, tt.args.orderId, tt.args.orderItemId, tt.args.update)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("OrderService.UpdateOrderItem() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("OrderRepository.UpdateOrderItem() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			// Convert structs to JSON for easier comparison
 			gotJSON, err := json.Marshal(got)
 			if err != nil {
-				t.Errorf("OrderService.UpdateOrderItem() error = %v", err)
+				t.Errorf("OrderRepository.UpdateOrderItem() error = %v", err)
 			}
 			wantJSON, _ := json.Marshal(tt.want)
 			if err != nil {
-				t.Errorf("OrderService.UpdateOrderItem() error = %v", err)
+				t.Errorf("OrderRepository.UpdateOrderItem() error = %v", err)
 			}
 
 			if string(gotJSON) != string(wantJSON) {
-				t.Errorf("OrderService.UpdateOrderItem() = %v, want %v", string(gotJSON), string(wantJSON))
+				t.Errorf("OrderRepository.UpdateOrderItem() = %v, want %v", string(gotJSON), string(wantJSON))
 			}
 		})
 	}
@@ -974,11 +974,11 @@ func TestOrderService_DeleteOrderItem(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	orderService := db.NewOrderService(firestoreService)
+	orderRepository := db.NewOrderRepository(firestoreService)
 
-	testOrder, err := orderService.CreateOrder(ctx, &service.Order{
+	testOrder, err := orderRepository.CreateOrder(ctx, &repository.Order{
 		CustomerId: "customer-1",
-		Items: []*service.OrderItem{
+		Items: []*repository.OrderItem{
 			{
 				ProductId: "product-1",
 				Quantity:  1,
@@ -990,7 +990,7 @@ func TestOrderService_DeleteOrderItem(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create test order: %v", err)
 	}
-	defer deleteTestOrder(t, ctx, orderService, testOrder.Id)
+	defer deleteTestOrder(t, ctx, orderRepository, testOrder.Id)
 
 	type args struct {
 		ctx         context.Context
@@ -1031,8 +1031,8 @@ func TestOrderService_DeleteOrderItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := orderService.DeleteOrderItem(tt.args.ctx, tt.args.orderId, tt.args.orderItemId); (err != nil) != tt.wantErr {
-				t.Errorf("OrderService.DeleteOrderItem() error = %v, wantErr %v", err, tt.wantErr)
+			if err := orderRepository.DeleteOrderItem(tt.args.ctx, tt.args.orderId, tt.args.orderItemId); (err != nil) != tt.wantErr {
+				t.Errorf("OrderRepository.DeleteOrderItem() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -1049,11 +1049,11 @@ func TestOrderService_UpdateOrderStatus(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	orderService := db.NewOrderService(firestoreService)
+	orderRepository := db.NewOrderRepository(firestoreService)
 
-	testOrder, err := orderService.CreateOrder(ctx, &service.Order{
+	testOrder, err := orderRepository.CreateOrder(ctx, &repository.Order{
 		CustomerId: "customer-1",
-		Items: []*service.OrderItem{
+		Items: []*repository.OrderItem{
 			{
 				ProductId: "product-1",
 				Quantity:  1,
@@ -1065,7 +1065,7 @@ func TestOrderService_UpdateOrderStatus(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create test order: %v", err)
 	}
-	defer deleteTestOrder(t, ctx, orderService, testOrder.Id)
+	defer deleteTestOrder(t, ctx, orderRepository, testOrder.Id)
 
 	type args struct {
 		ctx     context.Context
@@ -1076,7 +1076,7 @@ func TestOrderService_UpdateOrderStatus(t *testing.T) {
 		name string
 
 		args    args
-		want    *service.Order
+		want    *repository.Order
 		wantErr bool
 	}{
 		{
@@ -1086,11 +1086,11 @@ func TestOrderService_UpdateOrderStatus(t *testing.T) {
 				orderId: testOrder.Id,
 				status:  pkg.OrderStatusPaid,
 			},
-			want: &service.Order{
+			want: &repository.Order{
 				Id:          testOrder.Id,
 				CustomerId:  "customer-1",
 				OrderStatus: pkg.OrderStatusPaid,
-				Items: []*service.OrderItem{
+				Items: []*repository.OrderItem{
 					{
 						Id:        testOrder.Items[0].Id,
 						ProductId: "product-1",
@@ -1107,14 +1107,14 @@ func TestOrderService_UpdateOrderStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			got, err := orderService.UpdateOrderStatus(tt.args.ctx, tt.args.orderId, tt.args.status)
+			got, err := orderRepository.UpdateOrderStatus(tt.args.ctx, tt.args.orderId, tt.args.status)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("OrderService.UpdateOrderStatus() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("OrderRepository.UpdateOrderStatus() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != nil {
 				// Clear out the fields that are set by the DB
-				defer deleteTestOrder(t, ctx, orderService, got.Id)
+				defer deleteTestOrder(t, ctx, orderRepository, got.Id)
 
 				got.Id = ""
 				got.CreatedAt = ""
@@ -1140,15 +1140,15 @@ func TestOrderService_UpdateOrderStatus(t *testing.T) {
 			// Convert structs to JSON for easier comparison
 			gotJSON, err := json.Marshal(got)
 			if err != nil {
-				t.Errorf("OrderService.UpdateOrderStatus() error = %v", err)
+				t.Errorf("OrderRepository.UpdateOrderStatus() error = %v", err)
 			}
 			wantJSON, _ := json.Marshal(tt.want)
 			if err != nil {
-				t.Errorf("OrderService.UpdateOrderStatus() error = %v", err)
+				t.Errorf("OrderRepository.UpdateOrderStatus() error = %v", err)
 			}
 
 			if string(gotJSON) != string(wantJSON) {
-				t.Errorf("OrderService.UpdateOrderStatus() = %s, want %v", string(gotJSON), string(wantJSON))
+				t.Errorf("OrderRepository.UpdateOrderStatus() = %s, want %v", string(gotJSON), string(wantJSON))
 			}
 		})
 	}

@@ -5,38 +5,39 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-var _ service.ProductService = (*ProductService)(nil)
+var _ repository.ProductRepository = (*ProductRepository)(nil)
 
-type ProductService struct {
+type ProductRepository struct {
 	db *FirestoreService
 }
 
-func NewProductService(db *FirestoreService) *ProductService {
-	return &ProductService{
+func NewProductService(db *FirestoreService) *ProductRepository {
+	return &ProductRepository{
 		db: db,
 	}
 }
 
-func (s *ProductService) CheckPreconditions() {
-	if s.db == nil {
+func (r *ProductRepository) CheckPreconditions() {
+	if r.db == nil {
 		panic("no DB service provided")
 	}
 }
 
-func (s *ProductService) productCollection() *firestore.CollectionRef {
-	s.CheckPreconditions()
+func (r *ProductRepository) productCollection() *firestore.CollectionRef {
+	r.CheckPreconditions()
 
-	return s.db.client.Collection("products")
+	return r.db.client.Collection("products")
 }
 
-func (s *ProductService) CreateProduct(ctx context.Context, product *service.Product) (*service.Product, error) {
-	s.CheckPreconditions()
+func (r *ProductRepository) CreateProduct(ctx context.Context, product *repository.Product) (*repository.Product, error) {
+	r.CheckPreconditions()
 
 	// Set CreatedAt and UpdatedAt to the current time
 	currentTime := time.Now()
@@ -49,9 +50,9 @@ func (s *ProductService) CreateProduct(ctx context.Context, product *service.Pro
 		return nil, service.Errorf(service.INVALID_ERROR, "invalid product provided: %v", err)
 	}
 
-	productModel := s.marshallProduct(product)
+	productModel := r.marshallProduct(product)
 
-	docRef, _, writeErr := s.productCollection().Add(ctx, productModel)
+	docRef, _, writeErr := r.productCollection().Add(ctx, productModel)
 	if writeErr != nil {
 		return nil, writeErr
 	}
@@ -61,14 +62,14 @@ func (s *ProductService) CreateProduct(ctx context.Context, product *service.Pro
 	return product, nil
 }
 
-func (s *ProductService) GetProduct(ctx context.Context, id string) (*service.Product, error) {
-	s.CheckPreconditions()
+func (r *ProductRepository) GetProduct(ctx context.Context, id string) (*repository.Product, error) {
+	r.CheckPreconditions()
 
 	if id == "" {
 		return nil, service.Errorf(service.INVALID_ERROR, "id is required")
 	}
 
-	docRef, getErr := s.productCollection().Doc(id).Get(ctx)
+	docRef, getErr := r.productCollection().Doc(id).Get(ctx)
 	if status.Code(getErr) == codes.NotFound {
 		return nil, service.Errorf(service.NOT_FOUND_ERROR, "product not found")
 	} else if getErr != nil {
@@ -80,19 +81,19 @@ func (s *ProductService) GetProduct(ctx context.Context, id string) (*service.Pr
 		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to unmarshall product: %v", err)
 	}
 
-	product := s.unmarshallProduct(productModel)
+	product := r.unmarshallProduct(productModel)
 
 	product.Id = docRef.Ref.ID
 
 	return product, nil
 }
 
-func (s *ProductService) ListProducts(ctx context.Context) ([]*service.Product, error) {
-	s.CheckPreconditions()
+func (r *ProductRepository) ListProducts(ctx context.Context) ([]*repository.Product, error) {
+	r.CheckPreconditions()
 
-	iter := s.productCollection().Documents(ctx)
+	iter := r.productCollection().Documents(ctx)
 
-	var products []*service.Product
+	var products []*repository.Product
 
 	for {
 		docRef, err := iter.Next()
@@ -108,7 +109,7 @@ func (s *ProductService) ListProducts(ctx context.Context) ([]*service.Product, 
 			return nil, service.Errorf(service.INTERNAL_ERROR, "failed to unmarshall product: %v", err)
 		}
 
-		product := s.unmarshallProduct(productModel)
+		product := r.unmarshallProduct(productModel)
 		product.Id = docRef.Ref.ID
 
 		products = append(products, product)
@@ -117,11 +118,11 @@ func (s *ProductService) ListProducts(ctx context.Context) ([]*service.Product, 
 	return products, nil
 }
 
-func (s *ProductService) UpdateProduct(ctx context.Context, id string, update *service.ProductUpdate,
-) (*service.Product, error) {
-	s.CheckPreconditions()
+func (r *ProductRepository) UpdateProduct(ctx context.Context, id string, update *repository.ProductUpdate,
+) (*repository.Product, error) {
+	r.CheckPreconditions()
 
-	product, getErr := s.GetProduct(ctx, id)
+	product, getErr := r.GetProduct(ctx, id)
 	if getErr != nil {
 		return nil, getErr
 	}
@@ -146,9 +147,9 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id string, update *s
 	timeNow := time.Now()
 	product.UpdatedAt = timeNow.Format(time.RFC3339)
 
-	productModel := s.marshallProduct(product)
+	productModel := r.marshallProduct(product)
 
-	_, err = s.productCollection().Doc(id).Set(ctx, productModel)
+	_, err = r.productCollection().Doc(id).Set(ctx, productModel)
 	if err != nil {
 		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to update product: %v", err)
 	}
@@ -156,10 +157,10 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id string, update *s
 	return product, nil
 }
 
-func (s *ProductService) DeleteProduct(ctx context.Context, id string) error {
-	s.CheckPreconditions()
+func (r *ProductRepository) DeleteProduct(ctx context.Context, id string) error {
+	r.CheckPreconditions()
 
-	_, err := s.productCollection().Doc(id).Delete(ctx)
+	_, err := r.productCollection().Doc(id).Delete(ctx)
 	if err != nil {
 		return service.Errorf(service.INTERNAL_ERROR, "failed to delete product: %v", err)
 	}
@@ -167,7 +168,7 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id string) error {
 	return err
 }
 
-func (s *ProductService) marshallProduct(product *service.Product) *ProductModel {
+func (r *ProductRepository) marshallProduct(product *repository.Product) *ProductModel {
 	return &ProductModel{
 		Name:        product.Name,
 		Description: product.Description,
@@ -177,8 +178,8 @@ func (s *ProductService) marshallProduct(product *service.Product) *ProductModel
 	}
 }
 
-func (s *ProductService) unmarshallProduct(productModel *ProductModel) *service.Product {
-	return &service.Product{
+func (r *ProductRepository) unmarshallProduct(productModel *ProductModel) *repository.Product {
+	return &repository.Product{
 		Name:        productModel.Name,
 		Description: productModel.Description,
 		Price:       uint(productModel.Price),

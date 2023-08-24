@@ -6,7 +6,7 @@ import (
 	"log"
 
 	pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
-	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
@@ -14,7 +14,7 @@ func (s *GRPCServer) CreateProduct(ctx context.Context, in *pb.CreateProductRequ
 
 	log.Printf("Received: %v", in.GetName())
 
-	p, err := s.ProductService.CreateProduct(ctx, &service.Product{
+	p, err := s.ProductRepository.CreateProduct(ctx, &repository.Product{
 		Name:        in.GetName(),
 		Description: in.GetDescription(),
 		Price:       uint(in.GetPrice()),
@@ -32,7 +32,7 @@ func (s *GRPCServer) GetProduct(ctx context.Context, in *pb.GetProductRequest) (
 
 	log.Printf("Received: %v", in.GetId())
 
-	p, err := s.ProductService.GetProduct(ctx, in.GetId())
+	p, err := s.ProductRepository.GetProduct(ctx, in.GetId())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get product: %w", err)
 	}
@@ -49,7 +49,7 @@ func (s *GRPCServer) ListProducts(ctx context.Context, in *pb.ListProductsReques
 
 	log.Printf("Received: %v", in)
 
-	products, err := s.ProductService.ListProducts(ctx)
+	products, err := s.ProductRepository.ListProducts(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list products: %w", err)
 	}
@@ -73,7 +73,7 @@ func (s *GRPCServer) UpdateProduct(ctx context.Context, in *pb.UpdateProductRequ
 
 	log.Printf("Received: %v", in)
 
-	p, err := s.ProductService.UpdateProduct(ctx, in.GetId(), &service.ProductUpdate{
+	p, err := s.ProductRepository.UpdateProduct(ctx, in.GetId(), &repository.ProductUpdate{
 		Name:        pkg.StringPtr(in.GetUpdate().GetName()),
 		Description: pkg.StringPtr(in.GetUpdate().GetDescription()),
 		Price:       pkg.UintPtr(uint(in.GetUpdate().GetPrice())),
@@ -94,7 +94,7 @@ func (s *GRPCServer) DeleteProduct(ctx context.Context, in *pb.DeleteProductRequ
 
 	log.Printf("Received: %v", in)
 
-	err := s.ProductService.DeleteProduct(ctx, in.GetId())
+	err := s.ProductRepository.DeleteProduct(ctx, in.GetId())
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete product: %w", err)
 	}

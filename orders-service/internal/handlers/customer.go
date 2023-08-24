@@ -6,7 +6,7 @@ import (
 	"log"
 
 	pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
-	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
@@ -15,7 +15,7 @@ func (s *GRPCServer) CreateCustomer(
 
 	log.Printf("Received: %v", in.GetFirstName())
 
-	p, err := s.CustomerService.CreateCustomer(ctx, &service.Customer{
+	p, err := s.CustomerRepository.CreateCustomer(ctx, &repository.Customer{
 		FirstName: in.GetFirstName(),
 		LastName:  in.GetLastName(),
 		Email:     in.GetEmail(),
@@ -35,7 +35,7 @@ func (s *GRPCServer) GetCustomer(
 
 	log.Printf("Received: %v", in.GetId())
 
-	p, err := s.CustomerService.GetCustomer(ctx, in.GetId())
+	p, err := s.CustomerRepository.GetCustomer(ctx, in.GetId())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get customer: %w", err)
 	}
@@ -54,7 +54,7 @@ func (s *GRPCServer) ListCustomers(
 
 	log.Printf("Received: %v", in)
 
-	customers, err := s.CustomerService.ListCustomers(ctx)
+	customers, err := s.CustomerRepository.ListCustomers(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list customers: %w", err)
 	}
@@ -80,7 +80,7 @@ func (s *GRPCServer) UpdateCustomer(
 
 	log.Printf("Received: %v", in)
 
-	p, err := s.CustomerService.UpdateCustomer(ctx, in.GetId(), &service.CustomerUpdate{
+	p, err := s.CustomerRepository.UpdateCustomer(ctx, in.GetId(), &repository.CustomerUpdate{
 		FirstName: pkg.StringPtr(in.GetUpdate().GetFirstName()),
 		LastName:  pkg.StringPtr(in.GetUpdate().GetLastName()),
 		Phone:     pkg.StringPtr(in.GetUpdate().GetPhone()),
@@ -103,7 +103,7 @@ func (s *GRPCServer) DeleteCustomer(
 
 	log.Printf("Received: %v", in.GetId())
 
-	err := s.CustomerService.DeleteCustomer(ctx, in.GetId())
+	err := s.CustomerRepository.DeleteCustomer(ctx, in.GetId())
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete customer: %w", err)
 	}

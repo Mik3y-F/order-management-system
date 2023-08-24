@@ -8,10 +8,10 @@ import (
 	"time"
 
 	db "github.com/Mik3y-F/order-management-system/orders/internal/firebase"
-	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 )
 
-func deleteTestCustomer(t *testing.T, ctx context.Context, cs service.CustomerService, id string) {
+func deleteTestCustomer(t *testing.T, ctx context.Context, cs repository.CustomerRepository, id string) {
 	err := cs.DeleteCustomer(ctx, id)
 	if err != nil {
 		t.Fatalf("failed to delete product: %v", err)
@@ -41,7 +41,7 @@ func TestCustomerService_CheckPreconditions(t *testing.T) {
 			defer func() {
 				r := recover()
 				if (r != nil) != tt.wantPanic {
-					t.Errorf("CustomerService.CheckPreconditions() panic = %v, wantPanic %v", r, tt.wantPanic)
+					t.Errorf("CustomerRepository.CheckPreconditions() panic = %v, wantPanic %v", r, tt.wantPanic)
 				}
 			}()
 			s.CheckPreconditions()
@@ -61,30 +61,30 @@ func TestCustomerService_CreateCustomer(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	customerService := db.NewCustomerService(firestoreService)
+	customerRepository := db.NewCustomerService(firestoreService)
 
 	type args struct {
 		ctx      context.Context
-		customer *service.Customer
+		customer *repository.Customer
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *service.Customer
+		want    *repository.Customer
 		wantErr bool
 	}{
 		{
 			name: "Create Customer Success",
 			args: args{
 				ctx: context.Background(),
-				customer: &service.Customer{
+				customer: &repository.Customer{
 					FirstName: "Test",
 					LastName:  "Customer",
 					Email:     "test@test.com",
 					Phone:     "254722000000",
 				},
 			},
-			want: &service.Customer{
+			want: &repository.Customer{
 				Id:        "",
 				FirstName: "Test",
 				LastName:  "Customer",
@@ -99,7 +99,7 @@ func TestCustomerService_CreateCustomer(t *testing.T) {
 			name: "Create Customer Failure - Invalid Customer",
 			args: args{
 				ctx: context.Background(),
-				customer: &service.Customer{
+				customer: &repository.Customer{
 					FirstName: "",
 					LastName:  "Customer",
 					Email:     "test@test.com",
@@ -112,15 +112,15 @@ func TestCustomerService_CreateCustomer(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := customerService.CreateCustomer(tt.args.ctx, tt.args.customer)
+			got, err := customerRepository.CreateCustomer(tt.args.ctx, tt.args.customer)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("CustomerService.CreateCustomers() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CustomerRepository.CreateCustomers() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			if got != nil {
 				// Clean up the created customer
-				defer deleteTestCustomer(t, ctx, customerService, got.Id)
+				defer deleteTestCustomer(t, ctx, customerRepository, got.Id)
 				// Ignore the ID in the comparison since it's unpredictable
 				got.Id = ""
 			}
@@ -130,7 +130,7 @@ func TestCustomerService_CreateCustomer(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("CustomerService.CreateCustomers() = %v, want %v", got, tt.want)
+				t.Errorf("CustomerRepository.CreateCustomers() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -148,9 +148,9 @@ func TestCustomerService_GetCustomer(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	customerService := db.NewCustomerService(firestoreService)
+	customerRepository := db.NewCustomerService(firestoreService)
 
-	c, err := customerService.CreateCustomer(ctx, &service.Customer{
+	c, err := customerRepository.CreateCustomer(ctx, &repository.Customer{
 		FirstName: "Test",
 		LastName:  "Customer",
 		Email:     "test@email.com",
@@ -159,7 +159,7 @@ func TestCustomerService_GetCustomer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create customer: %v", err)
 	}
-	defer deleteTestCustomer(t, ctx, customerService, c.Id)
+	defer deleteTestCustomer(t, ctx, customerRepository, c.Id)
 
 	type args struct {
 		ctx context.Context
@@ -168,7 +168,7 @@ func TestCustomerService_GetCustomer(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *service.Customer
+		want    *repository.Customer
 		wantErr bool
 	}{
 		{
@@ -193,13 +193,13 @@ func TestCustomerService_GetCustomer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			got, err := customerService.GetCustomer(tt.args.ctx, tt.args.id)
+			got, err := customerRepository.GetCustomer(tt.args.ctx, tt.args.id)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("CustomerService.GetCustomer() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CustomerRepository.GetCustomer() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("CustomerService.GetCustomer() = %v, want %v", got, tt.want)
+				t.Errorf("CustomerRepository.GetCustomer() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -217,9 +217,9 @@ func TestCustomerService_ListCustomers(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	customerService := db.NewCustomerService(firestoreService)
+	customerRepository := db.NewCustomerService(firestoreService)
 
-	c, err := customerService.CreateCustomer(ctx, &service.Customer{
+	c, err := customerRepository.CreateCustomer(ctx, &repository.Customer{
 		FirstName: "Test",
 		LastName:  "Customer",
 		Email:     "test@test.com",
@@ -229,7 +229,7 @@ func TestCustomerService_ListCustomers(t *testing.T) {
 		t.Fatalf("failed to create customer: %v", err)
 	}
 
-	defer deleteTestCustomer(t, ctx, customerService, c.Id)
+	defer deleteTestCustomer(t, ctx, customerRepository, c.Id)
 
 	type args struct {
 		ctx context.Context
@@ -237,7 +237,7 @@ func TestCustomerService_ListCustomers(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []*service.Customer
+		want    []*repository.Customer
 		wantErr bool
 	}{
 		{
@@ -245,20 +245,20 @@ func TestCustomerService_ListCustomers(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 			},
-			want: []*service.Customer{
+			want: []*repository.Customer{
 				c,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := customerService.ListCustomers(tt.args.ctx)
+			got, err := customerRepository.ListCustomers(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("CustomerService.ListCustomers() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CustomerRepository.ListCustomers() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("CustomerService.ListCustomers() = %v, want %v", got, tt.want)
+				t.Errorf("CustomerRepository.ListCustomers() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -276,9 +276,9 @@ func TestCustomerService_UpdateCustomer(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	customerService := db.NewCustomerService(firestoreService)
+	customerRepository := db.NewCustomerService(firestoreService)
 
-	c, err := customerService.CreateCustomer(ctx, &service.Customer{
+	c, err := customerRepository.CreateCustomer(ctx, &repository.Customer{
 		FirstName: "Test",
 		LastName:  "Customer",
 		Email:     "test@test.com",
@@ -288,17 +288,17 @@ func TestCustomerService_UpdateCustomer(t *testing.T) {
 		t.Fatalf("failed to create customer: %v", err)
 	}
 
-	defer deleteTestCustomer(t, ctx, customerService, c.Id)
+	defer deleteTestCustomer(t, ctx, customerRepository, c.Id)
 
 	type args struct {
 		ctx    context.Context
 		id     string
-		update *service.CustomerUpdate
+		update *repository.CustomerUpdate
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *service.Customer
+		want    *repository.Customer
 		wantErr bool
 	}{
 		{
@@ -306,14 +306,14 @@ func TestCustomerService_UpdateCustomer(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				id:  c.Id,
-				update: &service.CustomerUpdate{
+				update: &repository.CustomerUpdate{
 					FirstName: func(s string) *string { return &s }("Updated Test"),
 					LastName:  func(s string) *string { return &s }("Customer"),
 					Phone:     func(s string) *string { return &s }("254722000000"),
 					Email:     func(s string) *string { return &s }("test@test.com"),
 				},
 			},
-			want: &service.Customer{
+			want: &repository.Customer{
 				Id:        c.Id,
 				FirstName: "Updated Test",
 				LastName:  "Customer",
@@ -329,7 +329,7 @@ func TestCustomerService_UpdateCustomer(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				id:  c.Id,
-				update: &service.CustomerUpdate{
+				update: &repository.CustomerUpdate{
 					FirstName: func(s string) *string { return &s }(""),
 					LastName:  func(s string) *string { return &s }("Customer"),
 					Email:     func(s string) *string { return &s }("test@test.com"),
@@ -341,23 +341,23 @@ func TestCustomerService_UpdateCustomer(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := customerService.UpdateCustomer(tt.args.ctx, tt.args.id, tt.args.update)
+			got, err := customerRepository.UpdateCustomer(tt.args.ctx, tt.args.id, tt.args.update)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("customerService.UpdateCustomer() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("customerRepository.UpdateCustomer() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			// Convert structs to JSON for easier comparison
 			gotJSON, err := json.Marshal(got)
 			if err != nil {
-				t.Errorf("OrderService.UpdateOrderItem() error = %v", err)
+				t.Errorf("OrderRepository.UpdateOrderItem() error = %v", err)
 			}
 			wantJSON, _ := json.Marshal(tt.want)
 			if err != nil {
-				t.Errorf("OrderService.UpdateOrderItem() error = %v", err)
+				t.Errorf("OrderRepository.UpdateOrderItem() error = %v", err)
 			}
 
 			if string(gotJSON) != string(wantJSON) {
-				t.Errorf("OrderService.UpdateOrderItem() = %v, want %v", string(gotJSON), string(wantJSON))
+				t.Errorf("OrderRepository.UpdateOrderItem() = %v, want %v", string(gotJSON), string(wantJSON))
 			}
 		})
 	}
@@ -375,9 +375,9 @@ func TestCustomerService_DeleteProduct(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	customerService := db.NewCustomerService(firestoreService)
+	customerRepository := db.NewCustomerService(firestoreService)
 
-	c, err := customerService.CreateCustomer(ctx, &service.Customer{
+	c, err := customerRepository.CreateCustomer(ctx, &repository.Customer{
 		FirstName: "Test",
 		LastName:  "Customer",
 		Phone:     "254722000000",
@@ -386,7 +386,7 @@ func TestCustomerService_DeleteProduct(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create customer: %v", err)
 	}
-	defer deleteTestCustomer(t, ctx, customerService, c.Id)
+	defer deleteTestCustomer(t, ctx, customerRepository, c.Id)
 
 	type args struct {
 		ctx context.Context
@@ -416,8 +416,8 @@ func TestCustomerService_DeleteProduct(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := customerService.DeleteCustomer(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
-				t.Errorf("customerService.DeleteCustomer() error = %v, wantErr %v", err, tt.wantErr)
+			if err := customerRepository.DeleteCustomer(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
+				t.Errorf("customerRepository.DeleteCustomer() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

@@ -1,6 +1,10 @@
-package service
+package repository
 
-import "context"
+import (
+	"context"
+
+	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+)
 
 type Customer struct {
 	Id        string
@@ -14,19 +18,19 @@ type Customer struct {
 
 func (c *Customer) Validate() error {
 	if c.FirstName == "" {
-		return Errorf(INVALID_ERROR, "first_name is required")
+		return service.Errorf(service.INVALID_ERROR, "first_name is required")
 	}
 
 	if c.LastName == "" {
-		return Errorf(INVALID_ERROR, "last_name is required")
+		return service.Errorf(service.INVALID_ERROR, "last_name is required")
 	}
 
 	if c.Email == "" {
-		return Errorf(INVALID_ERROR, "email is required")
+		return service.Errorf(service.INVALID_ERROR, "email is required")
 	}
 
 	if c.Phone == "" {
-		return Errorf(INVALID_ERROR, "phone is required")
+		return service.Errorf(service.INVALID_ERROR, "phone is required")
 	}
 
 	return nil
@@ -39,7 +43,7 @@ type CustomerUpdate struct {
 	Email     *string
 }
 
-type CustomerService interface {
+type CustomerRepository interface {
 	CreateCustomer(ctx context.Context, customer *Customer) (*Customer, error)
 	GetCustomer(ctx context.Context, id string) (*Customer, error)
 	ListCustomers(ctx context.Context) ([]*Customer, error)

@@ -5,39 +5,40 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
-	"github.com/Mik3y-F/order-management-system/orders/pkg"
+	orderPkg "github.com/Mik3y-F/order-management-system/orders/pkg"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-var _ service.OrderService = (*OrderService)(nil)
+var _ repository.OrderRepository = (*OrderRepository)(nil)
 
-type OrderService struct {
+type OrderRepository struct {
 	db *FirestoreService
 }
 
-func NewOrderService(db *FirestoreService) *OrderService {
-	return &OrderService{
+func NewOrderRepository(db *FirestoreService) *OrderRepository {
+	return &OrderRepository{
 		db: db,
 	}
 }
 
-func (s *OrderService) CheckPreconditions() {
+func (s *OrderRepository) CheckPreconditions() {
 	if s.db == nil {
 		panic("no DB service provided")
 	}
 }
 
-func (s *OrderService) orderCollection() *firestore.CollectionRef {
-	s.CheckPreconditions()
+func (r *OrderRepository) orderCollection() *firestore.CollectionRef {
+	r.CheckPreconditions()
 
-	return s.db.client.Collection("orders")
+	return r.db.client.Collection("orders")
 }
 
-func (s *OrderService) CreateOrder(ctx context.Context, order *service.Order) (*service.Order, error) {
-	s.CheckPreconditions()
+func (r *OrderRepository) CreateOrder(ctx context.Context, order *repository.Order) (*repository.Order, error) {
+	r.CheckPreconditions()
 
 	// Set CreatedAt and UpdatedAt to the current time
 	currentTime := time.Now()
@@ -45,23 +46,23 @@ func (s *OrderService) CreateOrder(ctx context.Context, order *service.Order) (*
 	order.CreatedAt = currentTime.Format(time.RFC3339)
 	order.UpdatedAt = currentTime.Format(time.RFC3339)
 
-	order.OrderStatus = pkg.OrderStatusNew
+	order.OrderStatus = orderPkg.OrderStatusNew
 
 	err := order.Validate()
 	if err != nil {
 		return nil, service.Errorf(service.INVALID_ERROR, "invalid order details provided: %v", err)
 	}
 
-	orderModel := s.marshallOrder(order)
+	orderModel := r.marshallOrder(order)
 
-	docRef, _, err := s.orderCollection().Add(ctx, orderModel)
+	docRef, _, err := r.orderCollection().Add(ctx, orderModel)
 	if err != nil {
 		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to create order: %v", err)
 	}
 
 	order.Id = docRef.ID
 
-	_, err = s.CreateOrderItems(ctx, order.Id, order.Items)
+	_, err = r.CreateOrderItems(ctx, order.Id, order.Items)
 	if err != nil {
 		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to create order items: %v", err)
 	}
@@ -69,14 +70,14 @@ func (s *OrderService) CreateOrder(ctx context.Context, order *service.Order) (*
 	return order, nil
 }
 
-func (s *OrderService) GetOrder(ctx context.Context, id string) (*service.Order, error) {
-	s.CheckPreconditions()
+func (r *OrderRepository) GetOrder(ctx context.Context, id string) (*repository.Order, error) {
+	r.CheckPreconditions()
 
 	if id == "" {
 		return nil, service.Errorf(service.INVALID_ERROR, "id is required")
 	}
 
-	docRef, err := s.orderCollection().Doc(id).Get(ctx)
+	docRef, err := r.orderCollection().Doc(id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		return nil, service.Errorf(service.NOT_FOUND_ERROR, "order not found")
 	} else if err != nil {
@@ -88,11 +89,11 @@ func (s *OrderService) GetOrder(ctx context.Context, id string) (*service.Order,
 		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to unmarshall order: %v", err)
 	}
 
-	order := s.unmarshallOrder(orderModel)
+	order := r.unmarshallOrder(orderModel)
 
 	order.Id = id
 
-	orderItems, err := s.ListOrderItems(ctx, id)
+	orderItems, err := r.ListOrderItems(ctx, id)
 	if err != nil {
 		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to get order items: %v", err)
 	}
@@ -102,12 +103,12 @@ func (s *OrderService) GetOrder(ctx context.Context, id string) (*service.Order,
 	return order, nil
 }
 
-func (s *OrderService) ListOrders(ctx context.Context) ([]*service.Order, error) {
-	s.CheckPreconditions()
+func (r *OrderRepository) ListOrders(ctx context.Context) ([]*repository.Order, error) {
+	r.CheckPreconditions()
 
-	iter := s.orderCollection().Documents(ctx)
+	iter := r.orderCollection().Documents(ctx)
 
-	orders := make([]*service.Order, 0)
+	orders := make([]*repository.Order, 0)
 
 	for {
 		doc, err := iter.Next()
@@ -123,11 +124,11 @@ func (s *OrderService) ListOrders(ctx context.Context) ([]*service.Order, error)
 			return nil, service.Errorf(service.INTERNAL_ERROR, "failed to unmarshall order: %v", err)
 		}
 
-		order := s.unmarshallOrder(orderModel)
+		order := r.unmarshallOrder(orderModel)
 
 		order.Id = doc.Ref.ID
 
-		orderItems, err := s.ListOrderItems(ctx, order.Id)
+		orderItems, err := r.ListOrderItems(ctx, order.Id)
 		if err != nil {
 			return nil, service.Errorf(service.INTERNAL_ERROR, "failed to get order items: %v", err)
 		}
@@ -140,11 +141,11 @@ func (s *OrderService) ListOrders(ctx context.Context) ([]*service.Order, error)
 	return orders, nil
 }
 
-func (s *OrderService) UpdateOrderStatus(
-	ctx context.Context, orderId string, status pkg.OrderStatus) (*service.Order, error) {
-	s.CheckPreconditions()
+func (r *OrderRepository) UpdateOrderStatus(
+	ctx context.Context, orderId string, status orderPkg.OrderStatus) (*repository.Order, error) {
+	r.CheckPreconditions()
 
-	order, err := s.GetOrder(ctx, orderId)
+	order, err := r.GetOrder(ctx, orderId)
 	if err != nil {
 		return nil, err
 	}
@@ -152,19 +153,19 @@ func (s *OrderService) UpdateOrderStatus(
 	order.OrderStatus = status
 	order.UpdatedAt = time.Now().Format(time.RFC3339)
 
-	orderModel := s.marshallOrder(order)
-	_, err = s.orderCollection().Doc(orderId).Set(ctx, orderModel)
+	orderModel := r.marshallOrder(order)
+	_, err = r.orderCollection().Doc(orderId).Set(ctx, orderModel)
 	if err != nil {
 		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to update order status: %v", err)
 	}
 
-	return s.GetOrder(ctx, orderId)
+	return r.GetOrder(ctx, orderId)
 }
 
-func (s *OrderService) DeleteOrder(ctx context.Context, id string) error {
-	s.CheckPreconditions()
+func (r *OrderRepository) DeleteOrder(ctx context.Context, id string) error {
+	r.CheckPreconditions()
 
-	_, err := s.orderCollection().Doc(id).Delete(ctx)
+	_, err := r.orderCollection().Doc(id).Delete(ctx)
 	if err != nil {
 		return service.Errorf(service.INTERNAL_ERROR, "failed to delete order: %v", err)
 	}
@@ -172,16 +173,16 @@ func (s *OrderService) DeleteOrder(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *OrderService) orderItemCollection(orderId string) *firestore.CollectionRef {
-	s.CheckPreconditions()
+func (r *OrderRepository) orderItemCollection(orderId string) *firestore.CollectionRef {
+	r.CheckPreconditions()
 
-	return s.orderCollection().Doc(orderId).Collection("items")
+	return r.orderCollection().Doc(orderId).Collection("items")
 }
 
-func (s *OrderService) CreateOrderItem(
-	ctx context.Context, orderId string, orderItem *service.OrderItem) (*service.OrderItem, error) {
+func (r *OrderRepository) CreateOrderItem(
+	ctx context.Context, orderId string, orderItem *repository.OrderItem) (*repository.OrderItem, error) {
 
-	s.CheckPreconditions()
+	r.CheckPreconditions()
 
 	// Set CreatedAt and UpdatedAt to the current time
 	currentTime := time.Now()
@@ -194,9 +195,9 @@ func (s *OrderService) CreateOrderItem(
 		return nil, service.Errorf(service.INVALID_ERROR, "invalid order item details provided: %v", err)
 	}
 
-	orderItemModel := s.marshallOrderItem(orderItem)
+	orderItemModel := r.marshallOrderItem(orderItem)
 
-	docRef, _, err := s.orderItemCollection(orderId).Add(ctx, orderItemModel)
+	docRef, _, err := r.orderItemCollection(orderId).Add(ctx, orderItemModel)
 	if err != nil {
 		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to create order item: %v", err)
 	}
@@ -206,19 +207,19 @@ func (s *OrderService) CreateOrderItem(
 	return orderItem, nil
 }
 
-func (s *OrderService) CreateOrderItems(
-	ctx context.Context, orderId string, orderItems []*service.OrderItem) ([]*service.OrderItem, error) {
+func (r *OrderRepository) CreateOrderItems(
+	ctx context.Context, orderId string, orderItems []*repository.OrderItem) ([]*repository.OrderItem, error) {
 
-	s.CheckPreconditions()
+	r.CheckPreconditions()
 
 	if orderId == "" {
 		return nil, service.Errorf(service.INVALID_ERROR, "order id is required")
 	}
 
-	bulkWriter := s.db.client.BulkWriter(ctx)
+	bulkWriter := r.db.client.BulkWriter(ctx)
 
 	currentTime := time.Now().Format(time.RFC3339)
-	var createdOrderItems []*service.OrderItem
+	var createdOrderItems []*repository.OrderItem
 
 	for _, orderItem := range orderItems {
 		// Set CreatedAt and UpdatedAt to the current time
@@ -230,8 +231,8 @@ func (s *OrderService) CreateOrderItems(
 			return nil, service.Errorf(service.INVALID_ERROR, "invalid order item details provided: %v", err)
 		}
 
-		orderItemModel := s.marshallOrderItem(orderItem)
-		docRef := s.orderItemCollection(orderId).NewDoc() // Create a new document reference.
+		orderItemModel := r.marshallOrderItem(orderItem)
+		docRef := r.orderItemCollection(orderId).NewDoc() // Create a new document reference.
 
 		orderItem.Id = docRef.ID
 		createdOrderItems = append(createdOrderItems, orderItem)
@@ -247,10 +248,10 @@ func (s *OrderService) CreateOrderItems(
 	return createdOrderItems, nil
 }
 
-func (s *OrderService) GetOrderItem(
-	ctx context.Context, orderId string, orderItemId string) (*service.OrderItem, error) {
+func (r *OrderRepository) GetOrderItem(
+	ctx context.Context, orderId string, orderItemId string) (*repository.OrderItem, error) {
 
-	s.CheckPreconditions()
+	r.CheckPreconditions()
 
 	if orderId == "" {
 		return nil, service.Errorf(service.INVALID_ERROR, "order id is required")
@@ -258,7 +259,7 @@ func (s *OrderService) GetOrderItem(
 		return nil, service.Errorf(service.INVALID_ERROR, "order item id is required")
 	}
 
-	docRef, err := s.orderItemCollection(orderId).Doc(orderItemId).Get(ctx)
+	docRef, err := r.orderItemCollection(orderId).Doc(orderItemId).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		return nil, service.Errorf(service.NOT_FOUND_ERROR, "order item not found")
 	} else if err != nil {
@@ -270,23 +271,23 @@ func (s *OrderService) GetOrderItem(
 		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to unmarshall order item: %v", err)
 	}
 
-	orderItem := s.unmarshallOrderItem(orderItemModel)
+	orderItem := r.unmarshallOrderItem(orderItemModel)
 
 	orderItem.Id = docRef.Ref.ID
 
 	return orderItem, nil
 }
 
-func (s *OrderService) ListOrderItems(ctx context.Context, orderId string) ([]*service.OrderItem, error) {
-	s.CheckPreconditions()
+func (r *OrderRepository) ListOrderItems(ctx context.Context, orderId string) ([]*repository.OrderItem, error) {
+	r.CheckPreconditions()
 
 	if orderId == "" {
 		return nil, service.Errorf(service.INVALID_ERROR, "order id is required")
 	}
 
-	iter := s.orderItemCollection(orderId).Documents(ctx)
+	iter := r.orderItemCollection(orderId).Documents(ctx)
 
-	orderItems := make([]*service.OrderItem, 0)
+	orderItems := make([]*repository.OrderItem, 0)
 
 	for {
 		doc, err := iter.Next()
@@ -302,7 +303,7 @@ func (s *OrderService) ListOrderItems(ctx context.Context, orderId string) ([]*s
 			return nil, service.Errorf(service.INTERNAL_ERROR, "failed to unmarshall order item: %v", err)
 		}
 
-		orderItem := s.unmarshallOrderItem(orderItemModel)
+		orderItem := r.unmarshallOrderItem(orderItemModel)
 
 		orderItem.Id = doc.Ref.ID
 
@@ -312,10 +313,10 @@ func (s *OrderService) ListOrderItems(ctx context.Context, orderId string) ([]*s
 	return orderItems, nil
 }
 
-func (s *OrderService) UpdateOrderItem(
-	ctx context.Context, orderId string, orderItemId string, update *service.OrderItemUpdate) (*service.OrderItem, error) {
+func (r *OrderRepository) UpdateOrderItem(
+	ctx context.Context, orderId string, orderItemId string, update *repository.OrderItemUpdate) (*repository.OrderItem, error) {
 
-	s.CheckPreconditions()
+	r.CheckPreconditions()
 
 	if orderId == "" {
 		return nil, service.Errorf(service.INVALID_ERROR, "order id is required")
@@ -323,7 +324,7 @@ func (s *OrderService) UpdateOrderItem(
 		return nil, service.Errorf(service.INVALID_ERROR, "order item id is required")
 	}
 
-	orderItem, err := s.GetOrderItem(ctx, orderId, orderItemId)
+	orderItem, err := r.GetOrderItem(ctx, orderId, orderItemId)
 	if err != nil {
 		return nil, err
 	}
@@ -335,17 +336,17 @@ func (s *OrderService) UpdateOrderItem(
 	// Set UpdatedAt to the current time
 	orderItem.UpdatedAt = time.Now().Format(time.RFC3339)
 
-	orderItemModel := s.marshallOrderItem(orderItem)
-	_, err = s.orderItemCollection(orderId).Doc(orderItemId).Set(ctx, orderItemModel)
+	orderItemModel := r.marshallOrderItem(orderItem)
+	_, err = r.orderItemCollection(orderId).Doc(orderItemId).Set(ctx, orderItemModel)
 	if err != nil {
 		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to update order item: %v", err)
 	}
 
-	return s.GetOrderItem(ctx, orderId, orderItemId)
+	return r.GetOrderItem(ctx, orderId, orderItemId)
 }
 
-func (s *OrderService) DeleteOrderItem(ctx context.Context, orderId string, orderItemId string) error {
-	s.CheckPreconditions()
+func (r *OrderRepository) DeleteOrderItem(ctx context.Context, orderId string, orderItemId string) error {
+	r.CheckPreconditions()
 
 	if orderId == "" {
 		return service.Errorf(service.INVALID_ERROR, "order id is required")
@@ -353,7 +354,7 @@ func (s *OrderService) DeleteOrderItem(ctx context.Context, orderId string, orde
 		return service.Errorf(service.INVALID_ERROR, "order item id is required")
 	}
 
-	_, err := s.orderItemCollection(orderId).Doc(orderItemId).Delete(ctx)
+	_, err := r.orderItemCollection(orderId).Doc(orderItemId).Delete(ctx)
 	if err != nil {
 		return service.Errorf(service.INTERNAL_ERROR, "failed to delete order item: %v", err)
 	}
@@ -361,47 +362,47 @@ func (s *OrderService) DeleteOrderItem(ctx context.Context, orderId string, orde
 	return nil
 }
 
-func (s *OrderService) marshallOrder(order *service.Order) *OrderModel {
+func (r *OrderRepository) marshallOrder(order *repository.Order) *OrderModel {
 	return &OrderModel{
 		CustomerId:  order.CustomerId,
-		Items:       s.marshallOrderItems(order.Items),
+		Items:       r.marshallOrderItems(order.Items),
 		OrderStatus: string(order.OrderStatus),
 		CreatedAt:   order.CreatedAt,
 		UpdatedAt:   order.UpdatedAt,
 	}
 }
 
-func (s *OrderService) unmarshallOrder(order *OrderModel) *service.Order {
-	return &service.Order{
+func (r *OrderRepository) unmarshallOrder(order *OrderModel) *repository.Order {
+	return &repository.Order{
 		CustomerId:  order.CustomerId,
-		Items:       s.unmarshallOrderItems(order.Items),
-		OrderStatus: pkg.OrderStatus(order.OrderStatus),
+		Items:       r.unmarshallOrderItems(order.Items),
+		OrderStatus: orderPkg.OrderStatus(order.OrderStatus),
 		CreatedAt:   order.CreatedAt,
 		UpdatedAt:   order.UpdatedAt,
 	}
 }
 
-func (s *OrderService) marshallOrderItems(items []*service.OrderItem) []*OrderItemModel {
+func (r *OrderRepository) marshallOrderItems(items []*repository.OrderItem) []*OrderItemModel {
 	orderItems := make([]*OrderItemModel, 0)
 
 	for _, item := range items {
-		orderItems = append(orderItems, s.marshallOrderItem(item))
+		orderItems = append(orderItems, r.marshallOrderItem(item))
 	}
 
 	return orderItems
 }
 
-func (s *OrderService) unmarshallOrderItems(items []*OrderItemModel) []*service.OrderItem {
-	orderItems := make([]*service.OrderItem, 0)
+func (r *OrderRepository) unmarshallOrderItems(items []*OrderItemModel) []*repository.OrderItem {
+	orderItems := make([]*repository.OrderItem, 0)
 
 	for _, item := range items {
-		orderItems = append(orderItems, s.unmarshallOrderItem(item))
+		orderItems = append(orderItems, r.unmarshallOrderItem(item))
 	}
 
 	return orderItems
 }
 
-func (s *OrderService) marshallOrderItem(item *service.OrderItem) *OrderItemModel {
+func (r *OrderRepository) marshallOrderItem(item *repository.OrderItem) *OrderItemModel {
 	return &OrderItemModel{
 		ProductId: item.ProductId,
 		Quantity:  int(item.Quantity),
@@ -410,8 +411,8 @@ func (s *OrderService) marshallOrderItem(item *service.OrderItem) *OrderItemMode
 	}
 }
 
-func (s *OrderService) unmarshallOrderItem(item *OrderItemModel) *service.OrderItem {
-	return &service.OrderItem{
+func (r *OrderRepository) unmarshallOrderItem(item *OrderItemModel) *repository.OrderItem {
+	return &repository.OrderItem{
 		ProductId: item.ProductId,
 		Quantity:  uint(item.Quantity),
 		CreatedAt: item.CreatedAt,
