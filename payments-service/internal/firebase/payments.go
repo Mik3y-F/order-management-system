@@ -110,6 +110,35 @@ func (r *PaymentsRepository) UpdatePaymentStatus(
 	return nil
 }
 
+func (r *PaymentsRepository) GetPaymentByMerchantRequestID(
+	ctx context.Context, merchantRequestID string) (*repository.Payment, error) {
+	r.CheckPreconditions()
+
+	if merchantRequestID == "" {
+		return nil, service.Errorf(service.INVALID_ERROR, "invalid merchant request ID provided")
+	}
+
+	query := r.paymentsCollection().Where("reference", "==", merchantRequestID).Limit(1)
+	docs, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to get payment: %v", err)
+	}
+
+	if len(docs) == 0 {
+		return nil, service.Errorf(service.NOT_FOUND_ERROR, "payment not found")
+	}
+
+	var paymentModel PaymentModel
+	err = docs[0].DataTo(&paymentModel)
+	if err != nil {
+		return nil, service.Errorf(service.INTERNAL_ERROR, "failed to decode payment: %v", err)
+	}
+
+	payment := r.unmarshallPayment(&paymentModel)
+
+	return payment, nil
+}
+
 func (r *PaymentsRepository) marshallPayment(payment *repository.Payment) *PaymentModel {
 	return &PaymentModel{
 		Amount:      payment.Amount,

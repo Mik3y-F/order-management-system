@@ -7,18 +7,18 @@ import (
 	"testing"
 
 	pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
-	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 )
 
 const (
 	ERROR_PRODUCT_TRIGGER = "Error Product"
 )
 
-func mockCreateProductFunc(ctx context.Context, p *service.Product) (*service.Product, error) {
+func mockCreateProductFunc(ctx context.Context, p *repository.Product) (*repository.Product, error) {
 	if p.Name == ERROR_PRODUCT_TRIGGER {
 		return nil, errors.New("intentional error")
 	}
-	return &service.Product{
+	return &repository.Product{
 		Id:          "1",
 		Name:        "Test Product",
 		Description: "Test Description",
@@ -30,7 +30,7 @@ func TestGRPCServer_CreateProduct(t *testing.T) {
 
 	s := NewTestGRPCServer(t)
 
-	s.ProductService.CreateProductFunc = mockCreateProductFunc
+	s.ProductRepository.CreateProductFunc = mockCreateProductFunc
 
 	tests := []struct {
 		name    string
@@ -76,11 +76,11 @@ func TestGRPCServer_CreateProduct(t *testing.T) {
 	}
 }
 
-func mockGetProductFunc(ctx context.Context, id string) (*service.Product, error) {
+func mockGetProductFunc(ctx context.Context, id string) (*repository.Product, error) {
 	if id == ERROR_PRODUCT_TRIGGER {
 		return nil, errors.New("intentional error")
 	}
-	return &service.Product{
+	return &repository.Product{
 		Id:          "1",
 		Name:        "Test Product",
 		Description: "Test Description",
@@ -92,7 +92,7 @@ func TestGRPCServer_GetProduct(t *testing.T) {
 
 	s := NewTestGRPCServer(t)
 
-	s.ProductService.GetProductFunc = mockGetProductFunc
+	s.ProductRepository.GetProductFunc = mockGetProductFunc
 
 	type args struct {
 		ctx context.Context
@@ -145,8 +145,8 @@ func TestGRPCServer_GetProduct(t *testing.T) {
 	}
 }
 
-func mockListProductsFunc(ctx context.Context) ([]*service.Product, error) {
-	return []*service.Product{
+func mockListProductsFunc(ctx context.Context) ([]*repository.Product, error) {
+	return []*repository.Product{
 		{
 			Id:          "1",
 			Name:        "Test Product",
@@ -159,7 +159,7 @@ func mockListProductsFunc(ctx context.Context) ([]*service.Product, error) {
 func TestGRPCServer_ListProducts(t *testing.T) {
 	s := NewTestGRPCServer(t)
 
-	s.ProductService.ListProductsFunc = mockListProductsFunc
+	s.ProductRepository.ListProductsFunc = mockListProductsFunc
 
 	type args struct {
 		ctx context.Context
@@ -204,11 +204,11 @@ func TestGRPCServer_ListProducts(t *testing.T) {
 	}
 }
 
-func mockUpdateProductFunc(ctx context.Context, id string, update *service.ProductUpdate) (*service.Product, error) {
+func mockUpdateProductFunc(ctx context.Context, id string, update *repository.ProductUpdate) (*repository.Product, error) {
 	if id == ERROR_PRODUCT_TRIGGER {
 		return nil, errors.New("intentional error")
 	}
-	return &service.Product{
+	return &repository.Product{
 		Id:          "1",
 		Name:        "Test Product",
 		Description: "Test Description",
@@ -219,7 +219,7 @@ func mockUpdateProductFunc(ctx context.Context, id string, update *service.Produ
 func TestGRPCServer_UpdateProduct(t *testing.T) {
 	s := NewTestGRPCServer(t)
 
-	s.ProductService.UpdateProductFunc = mockUpdateProductFunc
+	s.ProductRepository.UpdateProductFunc = mockUpdateProductFunc
 
 	type args struct {
 		ctx context.Context
@@ -294,7 +294,7 @@ func TestGRPCServer_DeleteProduct(t *testing.T) {
 
 	s := NewTestGRPCServer(t)
 
-	s.ProductService.DeleteProductFunc = mockDeleteProductFunc
+	s.ProductRepository.DeleteProductFunc = mockDeleteProductFunc
 
 	type args struct {
 		ctx context.Context

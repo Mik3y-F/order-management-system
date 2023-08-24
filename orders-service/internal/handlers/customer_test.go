@@ -7,18 +7,18 @@ import (
 	"testing"
 
 	pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
-	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 )
 
 const (
 	ERROR_CUSTOMER_TRIGGER = "Error Customer"
 )
 
-func mockCreateCustomerFunc(ctx context.Context, c *service.Customer) (*service.Customer, error) {
+func mockCreateCustomerFunc(ctx context.Context, c *repository.Customer) (*repository.Customer, error) {
 	if c.FirstName == ERROR_CUSTOMER_TRIGGER {
 		return nil, errors.New("intentional error")
 	}
-	return &service.Customer{
+	return &repository.Customer{
 		Id:        "1",
 		FirstName: "John",
 		LastName:  "Doe",
@@ -30,7 +30,7 @@ func TestGRPCServer_CreateCustomer(t *testing.T) {
 
 	s := NewTestGRPCServer(t)
 
-	s.CustomerService.CreateCustomerFunc = mockCreateCustomerFunc
+	s.CustomerRepository.CreateCustomerFunc = mockCreateCustomerFunc
 
 	tests := []struct {
 		name    string
@@ -76,11 +76,11 @@ func TestGRPCServer_CreateCustomer(t *testing.T) {
 	}
 }
 
-func mockGetCustomerFunc(ctx context.Context, id string) (*service.Customer, error) {
+func mockGetCustomerFunc(ctx context.Context, id string) (*repository.Customer, error) {
 	if id == ERROR_CUSTOMER_TRIGGER {
 		return nil, errors.New("intentional error")
 	}
-	return &service.Customer{
+	return &repository.Customer{
 		Id:        "1",
 		FirstName: "John",
 		LastName:  "Doe",
@@ -92,7 +92,7 @@ func TestGRPCServer_GetCustomer(t *testing.T) {
 
 	s := NewTestGRPCServer(t)
 
-	s.CustomerService.GetCustomerFunc = mockGetCustomerFunc
+	s.CustomerRepository.GetCustomerFunc = mockGetCustomerFunc
 
 	type args struct {
 		ctx context.Context
@@ -145,8 +145,8 @@ func TestGRPCServer_GetCustomer(t *testing.T) {
 	}
 }
 
-func mockListCustomersFunc(ctx context.Context) ([]*service.Customer, error) {
-	return []*service.Customer{
+func mockListCustomersFunc(ctx context.Context) ([]*repository.Customer, error) {
+	return []*repository.Customer{
 		{
 			Id:        "1",
 			FirstName: "John",
@@ -159,7 +159,7 @@ func mockListCustomersFunc(ctx context.Context) ([]*service.Customer, error) {
 func TestGRPCServer_ListCustomers(t *testing.T) {
 	s := NewTestGRPCServer(t)
 
-	s.CustomerService.ListCustomersFunc = mockListCustomersFunc
+	s.CustomerRepository.ListCustomersFunc = mockListCustomersFunc
 
 	type args struct {
 		ctx context.Context
@@ -204,11 +204,11 @@ func TestGRPCServer_ListCustomers(t *testing.T) {
 	}
 }
 
-func mockUpdateCustomerFunc(ctx context.Context, id string, update *service.CustomerUpdate) (*service.Customer, error) {
+func mockUpdateCustomerFunc(ctx context.Context, id string, update *repository.CustomerUpdate) (*repository.Customer, error) {
 	if id == ERROR_CUSTOMER_TRIGGER {
 		return nil, errors.New("intentional error")
 	}
-	return &service.Customer{
+	return &repository.Customer{
 		Id:        "1",
 		FirstName: *update.FirstName,
 		LastName:  *update.LastName,
@@ -219,7 +219,7 @@ func mockUpdateCustomerFunc(ctx context.Context, id string, update *service.Cust
 func TestGRPCServer_UpdateCustomer(t *testing.T) {
 	s := NewTestGRPCServer(t)
 
-	s.CustomerService.UpdateCustomerFunc = mockUpdateCustomerFunc
+	s.CustomerRepository.UpdateCustomerFunc = mockUpdateCustomerFunc
 
 	type args struct {
 		ctx context.Context
@@ -292,7 +292,7 @@ func mockDeleteCustomerFunc(ctx context.Context, id string) error {
 func TestGRPCServer_DeleteCustomer(t *testing.T) {
 	s := NewTestGRPCServer(t)
 
-	s.CustomerService.DeleteCustomerFunc = mockDeleteCustomerFunc
+	s.CustomerRepository.DeleteCustomerFunc = mockDeleteCustomerFunc
 
 	type args struct {
 		ctx context.Context

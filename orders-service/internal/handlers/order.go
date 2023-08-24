@@ -5,21 +5,21 @@ import (
 	"fmt"
 
 	pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
-	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
 func (s *GRPCServer) CreateOrder(ctx context.Context, in *pb.CreateOrderRequest) (*pb.CreateOrderResponse, error) {
 
-	var items []*service.OrderItem
+	var items []*repository.OrderItem
 	for _, item := range in.GetOrderItems() {
-		items = append(items, &service.OrderItem{
+		items = append(items, &repository.OrderItem{
 			ProductId: item.GetProductId(),
 			Quantity:  uint(item.GetQuantity()),
 		})
 	}
 
-	p, err := s.OrderService.CreateOrder(ctx, &service.Order{
+	p, err := s.OrderRepository.CreateOrder(ctx, &repository.Order{
 		CustomerId: in.GetCustomerId(),
 		Items:      items,
 	})
@@ -34,7 +34,7 @@ func (s *GRPCServer) CreateOrder(ctx context.Context, in *pb.CreateOrderRequest)
 
 func (s *GRPCServer) GetOrder(ctx context.Context, in *pb.GetOrderRequest) (*pb.GetOrderResponse, error) {
 
-	order, err := s.OrderService.GetOrder(ctx, in.GetId())
+	order, err := s.OrderRepository.GetOrder(ctx, in.GetId())
 	if err != nil {
 		return nil, Error(fmt.Errorf("failed to get order: %w", err))
 	}
@@ -57,7 +57,7 @@ func (s *GRPCServer) GetOrder(ctx context.Context, in *pb.GetOrderRequest) (*pb.
 
 func (s *GRPCServer) ListOrders(ctx context.Context, in *pb.ListOrdersRequest) (*pb.ListOrdersResponse, error) {
 
-	orders, err := s.OrderService.ListOrders(ctx)
+	orders, err := s.OrderRepository.ListOrders(ctx)
 	if err != nil {
 		return nil, Error(fmt.Errorf("failed to list orders: %w", err))
 	}
@@ -88,7 +88,7 @@ func (s *GRPCServer) ListOrders(ctx context.Context, in *pb.ListOrdersRequest) (
 func (s *GRPCServer) UpdateOrderStatus(
 	ctx context.Context, in *pb.UpdateOrderStatusRequest) (*pb.UpdateOrderStatusResponse, error) {
 
-	order, err := s.OrderService.UpdateOrderStatus(ctx, in.GetId(), getOrderStatus(in.GetStatus()))
+	order, err := s.OrderRepository.UpdateOrderStatus(ctx, in.GetId(), getOrderStatus(in.GetStatus()))
 	if err != nil {
 		return nil, Error(fmt.Errorf("failed to update order status: %w", err))
 	}
@@ -102,7 +102,7 @@ func (s *GRPCServer) UpdateOrderStatus(
 
 func (s *GRPCServer) DeleteOrder(ctx context.Context, in *pb.DeleteOrderRequest) (*pb.DeleteOrderResponse, error) {
 
-	err := s.OrderService.DeleteOrder(ctx, in.GetId())
+	err := s.OrderRepository.DeleteOrder(ctx, in.GetId())
 	if err != nil {
 		return nil, Error(fmt.Errorf("failed to delete order: %w", err))
 	}
@@ -113,7 +113,7 @@ func (s *GRPCServer) DeleteOrder(ctx context.Context, in *pb.DeleteOrderRequest)
 func (s *GRPCServer) CreateOrderItem(
 	ctx context.Context, in *pb.CreateOrderItemRequest) (*pb.CreateOrderItemResponse, error) {
 
-	orderItem, err := s.OrderService.CreateOrderItem(ctx, in.GetOrderId(), &service.OrderItem{
+	orderItem, err := s.OrderRepository.CreateOrderItem(ctx, in.GetOrderId(), &repository.OrderItem{
 		ProductId: in.GetProductId(),
 		Quantity:  uint(in.GetQuantity()),
 	})
@@ -128,7 +128,7 @@ func (s *GRPCServer) CreateOrderItem(
 
 func (s *GRPCServer) GetOrderItem(ctx context.Context, in *pb.GetOrderItemRequest) (*pb.GetOrderItemResponse, error) {
 
-	orderItem, err := s.OrderService.GetOrderItem(ctx, in.GetOrderId(), in.GetId())
+	orderItem, err := s.OrderRepository.GetOrderItem(ctx, in.GetOrderId(), in.GetId())
 	if err != nil {
 		return nil, Error(fmt.Errorf("failed to get order item: %w", err))
 	}
@@ -143,7 +143,7 @@ func (s *GRPCServer) GetOrderItem(ctx context.Context, in *pb.GetOrderItemReques
 func (s *GRPCServer) ListOrderItems(
 	ctx context.Context, in *pb.ListOrderItemsRequest) (*pb.ListOrderItemsResponse, error) {
 
-	orderItems, err := s.OrderService.ListOrderItems(ctx, in.GetOrderId())
+	orderItems, err := s.OrderRepository.ListOrderItems(ctx, in.GetOrderId())
 	if err != nil {
 		return nil, Error(fmt.Errorf("failed to list order items: %w", err))
 	}
@@ -170,7 +170,7 @@ func (s *GRPCServer) UpdateOrderItem(
 		quantity = new(uint)
 		*quantity = uint(in.GetUpdate().GetQuantity())
 	}
-	orderItem, err := s.OrderService.UpdateOrderItem(ctx, in.GetOrderId(), in.GetId(), &service.OrderItemUpdate{
+	orderItem, err := s.OrderRepository.UpdateOrderItem(ctx, in.GetOrderId(), in.GetId(), &repository.OrderItemUpdate{
 		Quantity: quantity,
 	})
 	if err != nil {
@@ -187,7 +187,7 @@ func (s *GRPCServer) UpdateOrderItem(
 func (s *GRPCServer) DeleteOrderItem(
 	ctx context.Context, in *pb.DeleteOrderItemRequest) (*pb.DeleteOrderItemResponse, error) {
 
-	err := s.OrderService.DeleteOrderItem(ctx, in.GetOrderId(), in.GetId())
+	err := s.OrderRepository.DeleteOrderItem(ctx, in.GetOrderId(), in.GetId())
 	if err != nil {
 		return nil, Error(fmt.Errorf("failed to delete order item: %w", err))
 	}

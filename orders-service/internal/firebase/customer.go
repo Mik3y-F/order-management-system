@@ -5,37 +5,38 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-var _ service.CustomerService = (*CustomerService)(nil)
+var _ repository.CustomerRepository = (*CustomerRepository)(nil)
 
-type CustomerService struct {
+type CustomerRepository struct {
 	db *FirestoreService
 }
 
-func NewCustomerService(db *FirestoreService) *CustomerService {
-	return &CustomerService{
+func NewCustomerService(db *FirestoreService) *CustomerRepository {
+	return &CustomerRepository{
 		db: db,
 	}
 }
 
-func (s *CustomerService) CheckPreconditions() {
+func (s *CustomerRepository) CheckPreconditions() {
 	if s.db == nil {
 		panic("no DB service provided")
 	}
 }
 
-func (s *CustomerService) customerCollection() *firestore.CollectionRef {
+func (s *CustomerRepository) customerCollection() *firestore.CollectionRef {
 	s.CheckPreconditions()
 
 	return s.db.client.Collection("customers")
 }
 
-func (s *CustomerService) CreateCustomer(ctx context.Context, customer *service.Customer) (*service.Customer, error) {
+func (s *CustomerRepository) CreateCustomer(ctx context.Context, customer *repository.Customer) (*repository.Customer, error) {
 	s.CheckPreconditions()
 
 	currentTime := time.Now()
@@ -58,7 +59,7 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, customer *service.
 	return customer, nil
 }
 
-func (s *CustomerService) GetCustomer(ctx context.Context, id string) (*service.Customer, error) {
+func (s *CustomerRepository) GetCustomer(ctx context.Context, id string) (*repository.Customer, error) {
 
 	s.CheckPreconditions()
 
@@ -85,12 +86,12 @@ func (s *CustomerService) GetCustomer(ctx context.Context, id string) (*service.
 	return customer, nil
 }
 
-func (s *CustomerService) ListCustomers(ctx context.Context) ([]*service.Customer, error) {
+func (s *CustomerRepository) ListCustomers(ctx context.Context) ([]*repository.Customer, error) {
 	s.CheckPreconditions()
 
 	iter := s.customerCollection().Documents(ctx)
 
-	var customers []*service.Customer
+	var customers []*repository.Customer
 
 	for {
 		docRef, err := iter.Next()
@@ -115,8 +116,8 @@ func (s *CustomerService) ListCustomers(ctx context.Context) ([]*service.Custome
 	return customers, nil
 }
 
-func (s *CustomerService) UpdateCustomer(
-	ctx context.Context, id string, update *service.CustomerUpdate) (*service.Customer, error) {
+func (s *CustomerRepository) UpdateCustomer(
+	ctx context.Context, id string, update *repository.CustomerUpdate) (*repository.Customer, error) {
 
 	s.CheckPreconditions()
 
@@ -160,7 +161,7 @@ func (s *CustomerService) UpdateCustomer(
 
 }
 
-func (s *CustomerService) DeleteCustomer(ctx context.Context, id string) error {
+func (s *CustomerRepository) DeleteCustomer(ctx context.Context, id string) error {
 	s.CheckPreconditions()
 
 	if id == "" {
@@ -172,7 +173,7 @@ func (s *CustomerService) DeleteCustomer(ctx context.Context, id string) error {
 	return err
 }
 
-func (s *CustomerService) marshallCustomer(customer *service.Customer) *CustomerModel {
+func (s *CustomerRepository) marshallCustomer(customer *repository.Customer) *CustomerModel {
 
 	return &CustomerModel{
 		FirstName: customer.FirstName,
@@ -184,9 +185,9 @@ func (s *CustomerService) marshallCustomer(customer *service.Customer) *Customer
 	}
 }
 
-func (s *CustomerService) unmarshallCustomer(customerModel *CustomerModel) *service.Customer {
+func (s *CustomerRepository) unmarshallCustomer(customerModel *CustomerModel) *repository.Customer {
 
-	return &service.Customer{
+	return &repository.Customer{
 		FirstName: customerModel.FirstName,
 		LastName:  customerModel.LastName,
 		Email:     customerModel.Email,

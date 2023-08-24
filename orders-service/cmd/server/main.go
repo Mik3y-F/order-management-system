@@ -5,8 +5,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/Mik3y-F/order-management-system/orders/internal/checkout"
 	db "github.com/Mik3y-F/order-management-system/orders/internal/firebase"
 	"github.com/Mik3y-F/order-management-system/orders/internal/handlers"
+	payments "github.com/Mik3y-F/order-management-system/payments/pkg/client"
 )
 
 const (
@@ -44,13 +46,24 @@ func main() {
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
 
-	productService := db.NewProductService(firestoreService)
-	customerService := db.NewCustomerService(firestoreService)
-	orderService := db.NewOrderService(firestoreService)
+	ProductRepository := db.NewProductService(firestoreService)
+	customerRepository := db.NewCustomerService(firestoreService)
+	orderRepository := db.NewOrderRepository(firestoreService)
 
-	s.ProductService = productService
-	s.CustomerService = customerService
-	s.OrderService = orderService
+	// Setup payments service client
+	conn, err := payments.ConnectToPaymentService("localhost:50051")
+	if err != nil {
+		log.Fatalf("Failed to connect to order service: %v", err)
+	}
+	paymentsClient := payments.NewGrpcPaymentsClient(conn)
+
+	checkoutService := checkout.NewCheckoutService(
+		ProductRepository, customerRepository, orderRepository, paymentsClient)
+
+	s.ProductRepository = ProductRepository
+	s.CustomerRepository = customerRepository
+	s.OrderRepository = orderRepository
+	s.CheckoutService = checkoutService
 
 	if err := s.Run(ctx, bindAddress, port); err != nil {
 		log.Fatalf("failed to serve: %v", err)

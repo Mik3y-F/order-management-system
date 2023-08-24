@@ -1,8 +1,9 @@
-package service
+package repository
 
 import (
 	"context"
 
+	"github.com/Mik3y-F/order-management-system/orders/internal/service"
 	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
@@ -16,11 +17,11 @@ type OrderItem struct {
 
 func (o *OrderItem) Validate() error {
 	if o.ProductId == "" {
-		return Errorf(INVALID_ERROR, "product_id is required")
+		return service.Errorf(service.INVALID_ERROR, "product_id is required")
 	}
 
 	if o.Quantity == 0 {
-		return Errorf(INVALID_ERROR, "quantity is required")
+		return service.Errorf(service.INVALID_ERROR, "quantity is required")
 	}
 
 	return nil
@@ -41,11 +42,11 @@ type Order struct {
 
 func (o *Order) Validate() error {
 	if o.CustomerId == "" {
-		return Errorf(INVALID_ERROR, "customer_id is required")
+		return service.Errorf(service.INVALID_ERROR, "customer_id is required")
 	}
 
 	if len(o.Items) == 0 {
-		return Errorf(INVALID_ERROR, "items are required")
+		return service.Errorf(service.INVALID_ERROR, "items are required")
 	}
 
 	for _, item := range o.Items {
@@ -58,7 +59,7 @@ func (o *Order) Validate() error {
 	return nil
 }
 
-type OrderService interface {
+type OrderRepository interface {
 
 	// Order CRUD
 	CreateOrder(ctx context.Context, order *Order) (*Order, error)

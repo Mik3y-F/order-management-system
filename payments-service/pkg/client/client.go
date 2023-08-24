@@ -1,4 +1,4 @@
-package payments
+package client
 
 import (
 	"context"
@@ -9,11 +9,11 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type HealthCheckRequest = pb.HealthCheckRequest
-type HealthCheckResponse = pb.HealthCheckResponse
+var _ PaymentsClient = (*GrpcPaymentsClient)(nil)
 
 type PaymentsClient interface {
-	HealthCheck(ctx context.Context, product *HealthCheckRequest) (*HealthCheckResponse, error)
+	HealthCheck(ctx context.Context, req *HealthCheckRequest) (*HealthCheckResponse, error)
+	ProcessMpesaPayment(ctx context.Context, req *ProcessMpesaPaymentRequest) (*ProcessMpesaPaymentResponse, error)
 }
 
 type GrpcPaymentsClient struct {
@@ -31,7 +31,7 @@ func NewGrpcPaymentsClient(conn *grpc.ClientConn) *GrpcPaymentsClient {
 	}
 }
 
-func ConnectToOrderService(address string) (*grpc.ClientConn, error) {
+func ConnectToPaymentService(address string) (*grpc.ClientConn, error) {
 
 	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {

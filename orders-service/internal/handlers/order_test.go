@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	pb "github.com/Mik3y-F/order-management-system/orders/api/generated"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 	"github.com/Mik3y-F/order-management-system/orders/internal/service"
 	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
@@ -14,20 +15,20 @@ const (
 	ERROR_ORDER_TRIGGER = "Error Order"
 )
 
-func mockCreateOrderFunc(ctx context.Context, o *service.Order) (*service.Order, error) {
+func mockCreateOrderFunc(ctx context.Context, o *repository.Order) (*repository.Order, error) {
 	if o.CustomerId == ERROR_ORDER_TRIGGER {
 		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
-	var items []*service.OrderItem
+	var items []*repository.OrderItem
 	for _, item := range o.Items {
-		items = append(items, &service.OrderItem{
+		items = append(items, &repository.OrderItem{
 			ProductId: item.ProductId,
 			Quantity:  uint(item.Quantity),
 		})
 	}
 
-	return &service.Order{
+	return &repository.Order{
 		Id:         "1",
 		CustomerId: o.CustomerId,
 		Items:      items,
@@ -36,7 +37,7 @@ func mockCreateOrderFunc(ctx context.Context, o *service.Order) (*service.Order,
 func TestGRPCServer_CreateOrder(t *testing.T) {
 	s := NewTestGRPCServer(t)
 
-	s.OrderService.CreateOrderFunc = mockCreateOrderFunc
+	s.OrderRepository.CreateOrderFunc = mockCreateOrderFunc
 
 	type args struct {
 		ctx context.Context
@@ -99,16 +100,16 @@ func TestGRPCServer_CreateOrder(t *testing.T) {
 	}
 }
 
-func mockGetOrderFunc(ctx context.Context, id string) (*service.Order, error) {
+func mockGetOrderFunc(ctx context.Context, id string) (*repository.Order, error) {
 	if id == ERROR_ORDER_TRIGGER {
 		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
-	return &service.Order{
+	return &repository.Order{
 		Id:          "1",
 		CustomerId:  "1",
 		OrderStatus: pkg.OrderStatusNew,
-		Items: []*service.OrderItem{
+		Items: []*repository.OrderItem{
 			{
 				ProductId: "1",
 				Quantity:  1,
@@ -119,7 +120,7 @@ func mockGetOrderFunc(ctx context.Context, id string) (*service.Order, error) {
 func TestGRPCServer_GetOrder(t *testing.T) {
 	s := NewTestGRPCServer(t)
 
-	s.OrderService.GetOrderFunc = mockGetOrderFunc
+	s.OrderRepository.GetOrderFunc = mockGetOrderFunc
 
 	type args struct {
 		ctx context.Context
@@ -178,13 +179,13 @@ func TestGRPCServer_GetOrder(t *testing.T) {
 	}
 }
 
-func mockListOrdersFunc(ctx context.Context) ([]*service.Order, error) {
-	return []*service.Order{
+func mockListOrdersFunc(ctx context.Context) ([]*repository.Order, error) {
+	return []*repository.Order{
 		{
 			Id:          "1",
 			CustomerId:  "1",
 			OrderStatus: pkg.OrderStatusNew,
-			Items: []*service.OrderItem{
+			Items: []*repository.OrderItem{
 				{
 					ProductId: "1",
 					Quantity:  1,
@@ -198,7 +199,7 @@ func TestGRPCServer_ListOrders(t *testing.T) {
 
 	s := NewTestGRPCServer(t)
 
-	s.OrderService.ListOrdersFunc = mockListOrdersFunc
+	s.OrderRepository.ListOrdersFunc = mockListOrdersFunc
 
 	type args struct {
 		ctx context.Context
@@ -247,16 +248,16 @@ func TestGRPCServer_ListOrders(t *testing.T) {
 	}
 }
 
-func mockUpdateOrderStatusFunc(ctx context.Context, id string, status pkg.OrderStatus) (*service.Order, error) {
+func mockUpdateOrderStatusFunc(ctx context.Context, id string, status pkg.OrderStatus) (*repository.Order, error) {
 	if id == ERROR_ORDER_TRIGGER {
 		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
-	return &service.Order{
+	return &repository.Order{
 		Id:          "1",
 		CustomerId:  "1",
 		OrderStatus: status,
-		Items: []*service.OrderItem{
+		Items: []*repository.OrderItem{
 			{
 				ProductId: "1",
 				Quantity:  1,
@@ -268,7 +269,7 @@ func mockUpdateOrderStatusFunc(ctx context.Context, id string, status pkg.OrderS
 func TestGRPCServer_UpdateOrderStatus(t *testing.T) {
 	s := NewTestGRPCServer(t)
 
-	s.OrderService.UpdateOrderStatusFunc = mockUpdateOrderStatusFunc
+	s.OrderRepository.UpdateOrderStatusFunc = mockUpdateOrderStatusFunc
 
 	type args struct {
 		ctx context.Context
@@ -335,7 +336,7 @@ func TestGRPCServer_DeleteOrder(t *testing.T) {
 
 	s := NewTestGRPCServer(t)
 
-	s.OrderService.DeleteOrderFunc = mockDeleteOrderFunc
+	s.OrderRepository.DeleteOrderFunc = mockDeleteOrderFunc
 
 	type args struct {
 		ctx context.Context
@@ -384,12 +385,12 @@ func TestGRPCServer_DeleteOrder(t *testing.T) {
 	}
 }
 
-func mockCreateOrderItemFunc(ctx context.Context, orderId string, item *service.OrderItem) (*service.OrderItem, error) {
+func mockCreateOrderItemFunc(ctx context.Context, orderId string, item *repository.OrderItem) (*repository.OrderItem, error) {
 	if orderId == ERROR_ORDER_TRIGGER {
 		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
-	return &service.OrderItem{
+	return &repository.OrderItem{
 		Id:        "1",
 		ProductId: item.ProductId,
 		Quantity:  item.Quantity,
@@ -400,7 +401,7 @@ func TestGRPCServer_CreateOrderItem(t *testing.T) {
 
 	s := NewTestGRPCServer(t)
 
-	s.OrderService.CreateOrderItemFunc = mockCreateOrderItemFunc
+	s.OrderRepository.CreateOrderItemFunc = mockCreateOrderItemFunc
 
 	type args struct {
 		ctx context.Context
@@ -456,12 +457,12 @@ func TestGRPCServer_CreateOrderItem(t *testing.T) {
 	}
 }
 
-func mockGetOrderItemFunc(ctx context.Context, orderId, itemId string) (*service.OrderItem, error) {
+func mockGetOrderItemFunc(ctx context.Context, orderId, itemId string) (*repository.OrderItem, error) {
 	if orderId == ERROR_ORDER_TRIGGER {
 		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
-	return &service.OrderItem{
+	return &repository.OrderItem{
 		Id:        "1",
 		ProductId: "1",
 		Quantity:  1,
@@ -471,7 +472,7 @@ func mockGetOrderItemFunc(ctx context.Context, orderId, itemId string) (*service
 func TestGRPCServer_GetOrderItem(t *testing.T) {
 	s := NewTestGRPCServer(t)
 
-	s.OrderService.GetOrderItemFunc = mockGetOrderItemFunc
+	s.OrderRepository.GetOrderItemFunc = mockGetOrderItemFunc
 
 	type args struct {
 		ctx context.Context
@@ -526,12 +527,12 @@ func TestGRPCServer_GetOrderItem(t *testing.T) {
 	}
 }
 
-func mockListOrderItemsFunc(ctx context.Context, orderId string) ([]*service.OrderItem, error) {
+func mockListOrderItemsFunc(ctx context.Context, orderId string) ([]*repository.OrderItem, error) {
 	if orderId == ERROR_ORDER_TRIGGER {
 		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
-	return []*service.OrderItem{
+	return []*repository.OrderItem{
 		{
 			Id:        "1",
 			ProductId: "1",
@@ -543,7 +544,7 @@ func mockListOrderItemsFunc(ctx context.Context, orderId string) ([]*service.Ord
 func TestGRPCServer_ListOrderItems(t *testing.T) {
 
 	s := NewTestGRPCServer(t)
-	s.OrderService.ListOrderItemsFunc = mockListOrderItemsFunc
+	s.OrderRepository.ListOrderItemsFunc = mockListOrderItemsFunc
 
 	type args struct {
 		ctx context.Context
@@ -602,12 +603,12 @@ func TestGRPCServer_ListOrderItems(t *testing.T) {
 	}
 }
 
-func mockUpdateOrderItemFunc(ctx context.Context, orderId, itemId string, item *service.OrderItemUpdate) (*service.OrderItem, error) {
+func mockUpdateOrderItemFunc(ctx context.Context, orderId, itemId string, item *repository.OrderItemUpdate) (*repository.OrderItem, error) {
 	if orderId == ERROR_ORDER_TRIGGER {
 		return nil, service.Errorf(service.INVALID_ERROR, "intentional error")
 	}
 
-	return &service.OrderItem{
+	return &repository.OrderItem{
 		Id:        "1",
 		ProductId: "1",
 		Quantity:  *item.Quantity,
@@ -617,7 +618,7 @@ func mockUpdateOrderItemFunc(ctx context.Context, orderId, itemId string, item *
 func TestGRPCServer_UpdateOrderItem(t *testing.T) {
 
 	s := NewTestGRPCServer(t)
-	s.OrderService.UpdateOrderItemFunc = mockUpdateOrderItemFunc
+	s.OrderRepository.UpdateOrderItemFunc = mockUpdateOrderItemFunc
 
 	type args struct {
 		ctx context.Context
@@ -689,7 +690,7 @@ func mockDeleteOrderItemFunc(ctx context.Context, orderId, itemId string) error 
 func TestGRPCServer_DeleteOrderItem(t *testing.T) {
 
 	s := NewTestGRPCServer(t)
-	s.OrderService.DeleteOrderItemFunc = mockDeleteOrderItemFunc
+	s.OrderRepository.DeleteOrderItemFunc = mockDeleteOrderItemFunc
 
 	type args struct {
 		ctx context.Context

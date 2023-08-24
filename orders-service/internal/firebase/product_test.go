@@ -7,18 +7,18 @@ import (
 	"time"
 
 	db "github.com/Mik3y-F/order-management-system/orders/internal/firebase"
-	"github.com/Mik3y-F/order-management-system/orders/internal/service"
+	"github.com/Mik3y-F/order-management-system/orders/internal/repository"
 	"github.com/Mik3y-F/order-management-system/orders/pkg"
 )
 
-func deleteTestProduct(t *testing.T, ctx context.Context, productService service.ProductService, id string) {
-	err := productService.DeleteProduct(ctx, id)
+func deleteTestProduct(t *testing.T, ctx context.Context, productRepository repository.ProductRepository, id string) {
+	err := productRepository.DeleteProduct(ctx, id)
 	if err != nil {
 		t.Fatalf("failed to delete product: %v", err)
 	}
 }
 
-func TestProductService_CheckPreconditions(t *testing.T) {
+func TestProductRepository_CheckPreconditions(t *testing.T) {
 	type fields struct {
 		db *db.FirestoreService
 	}
@@ -41,7 +41,7 @@ func TestProductService_CheckPreconditions(t *testing.T) {
 			defer func() {
 				r := recover()
 				if (r != nil) != tt.wantPanic {
-					t.Errorf("ProductService.CheckPreconditions() panic = %v, wantPanic %v", r, tt.wantPanic)
+					t.Errorf("ProductRepository.CheckPreconditions() panic = %v, wantPanic %v", r, tt.wantPanic)
 				}
 			}()
 			s.CheckPreconditions()
@@ -49,7 +49,7 @@ func TestProductService_CheckPreconditions(t *testing.T) {
 	}
 }
 
-func TestProductService_CreateProduct(t *testing.T) {
+func TestProductRepository_CreateProduct(t *testing.T) {
 
 	ctx := context.Background()
 
@@ -61,29 +61,29 @@ func TestProductService_CreateProduct(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	productService := db.NewProductService(firestoreService)
+	productRepository := db.NewProductService(firestoreService)
 
 	type args struct {
 		ctx     context.Context
-		product *service.Product
+		product *repository.Product
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *service.Product
+		want    *repository.Product
 		wantErr bool
 	}{
 		{
 			name: "Create Product Success",
 			args: args{
 				ctx: context.Background(),
-				product: &service.Product{
+				product: &repository.Product{
 					Name:        "Test Product",
 					Description: "Test Description",
 					Price:       100,
 				},
 			},
-			want: &service.Product{
+			want: &repository.Product{
 				Name:        "Test Product",
 				Description: "Test Description",
 				Price:       100,
@@ -96,7 +96,7 @@ func TestProductService_CreateProduct(t *testing.T) {
 			name: "Create Product Failed - Invalid Product",
 			args: args{
 				ctx: context.Background(),
-				product: &service.Product{
+				product: &repository.Product{
 					Name:        "",
 					Description: "Test Description",
 					Price:       100,
@@ -108,16 +108,16 @@ func TestProductService_CreateProduct(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := productService.CreateProduct(tt.args.ctx, tt.args.product)
+			got, err := productRepository.CreateProduct(tt.args.ctx, tt.args.product)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ProductService.CreateProduct() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ProductRepository.CreateProduct() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			if got != nil {
 
 				// Clean up the created product
-				defer deleteTestProduct(t, ctx, productService, got.Id)
+				defer deleteTestProduct(t, ctx, productRepository, got.Id)
 
 				// Ignore the ID in the comparison since it's unpredictable
 				got.Id = ""
@@ -128,13 +128,13 @@ func TestProductService_CreateProduct(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ProductService.CreateProduct() = %v, want %v", got, tt.want)
+				t.Errorf("ProductRepository.CreateProduct() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestProductService_GetProduct(t *testing.T) {
+func TestProductRepository_GetProduct(t *testing.T) {
 
 	ctx := context.Background()
 
@@ -146,9 +146,9 @@ func TestProductService_GetProduct(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	productService := db.NewProductService(firestoreService)
+	productRepository := db.NewProductService(firestoreService)
 
-	p, err := productService.CreateProduct(ctx, &service.Product{
+	p, err := productRepository.CreateProduct(ctx, &repository.Product{
 		Name:        "Test Product",
 		Description: "Test Description",
 		Price:       100,
@@ -156,7 +156,7 @@ func TestProductService_GetProduct(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create product: %v", err)
 	}
-	defer deleteTestProduct(t, ctx, productService, p.Id)
+	defer deleteTestProduct(t, ctx, productRepository, p.Id)
 
 	type args struct {
 		ctx context.Context
@@ -165,7 +165,7 @@ func TestProductService_GetProduct(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *service.Product
+		want    *repository.Product
 		wantErr bool
 	}{
 		{
@@ -190,19 +190,19 @@ func TestProductService_GetProduct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			got, err := productService.GetProduct(tt.args.ctx, tt.args.id)
+			got, err := productRepository.GetProduct(tt.args.ctx, tt.args.id)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ProductService.GetProduct() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ProductRepository.GetProduct() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ProductService.GetProduct() = %v, want %v", got, tt.want)
+				t.Errorf("ProductRepository.GetProduct() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestProductService_ListProducts(t *testing.T) {
+func TestProductRepository_ListProducts(t *testing.T) {
 
 	ctx := context.Background()
 
@@ -214,9 +214,9 @@ func TestProductService_ListProducts(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	productService := db.NewProductService(firestoreService)
+	productRepository := db.NewProductService(firestoreService)
 
-	p, err := productService.CreateProduct(ctx, &service.Product{
+	p, err := productRepository.CreateProduct(ctx, &repository.Product{
 		Name:        "Test Product",
 		Description: "Test Description",
 		Price:       100,
@@ -225,7 +225,7 @@ func TestProductService_ListProducts(t *testing.T) {
 		t.Fatalf("failed to create product: %v", err)
 	}
 
-	defer deleteTestProduct(t, ctx, productService, p.Id)
+	defer deleteTestProduct(t, ctx, productRepository, p.Id)
 
 	type args struct {
 		ctx context.Context
@@ -233,7 +233,7 @@ func TestProductService_ListProducts(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []*service.Product
+		want    []*repository.Product
 		wantErr bool
 	}{
 		{
@@ -241,26 +241,26 @@ func TestProductService_ListProducts(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 			},
-			want: []*service.Product{
+			want: []*repository.Product{
 				p,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := productService.ListProducts(tt.args.ctx)
+			got, err := productRepository.ListProducts(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ProductService.ListProducts() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ProductRepository.ListProducts() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ProductService.ListProducts() = %v, want %v", got, tt.want)
+				t.Errorf("ProductRepository.ListProducts() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestProductService_UpdateProduct(t *testing.T) {
+func TestProductRepository_UpdateProduct(t *testing.T) {
 
 	ctx := context.Background()
 
@@ -272,9 +272,9 @@ func TestProductService_UpdateProduct(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	productService := db.NewProductService(firestoreService)
+	productRepository := db.NewProductService(firestoreService)
 
-	p, err := productService.CreateProduct(ctx, &service.Product{
+	p, err := productRepository.CreateProduct(ctx, &repository.Product{
 		Name:        "Test Product",
 		Description: "Test Description",
 		Price:       100,
@@ -283,17 +283,17 @@ func TestProductService_UpdateProduct(t *testing.T) {
 		t.Fatalf("failed to create product: %v", err)
 	}
 
-	defer deleteTestProduct(t, ctx, productService, p.Id)
+	defer deleteTestProduct(t, ctx, productRepository, p.Id)
 
 	type args struct {
 		ctx    context.Context
 		id     string
-		update *service.ProductUpdate
+		update *repository.ProductUpdate
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *service.Product
+		want    *repository.Product
 		wantErr bool
 	}{
 		{
@@ -301,13 +301,13 @@ func TestProductService_UpdateProduct(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				id:  p.Id,
-				update: &service.ProductUpdate{
+				update: &repository.ProductUpdate{
 					Name:        pkg.StringPtr("Updated Test Product"),
 					Description: pkg.StringPtr("Updated Test Description"),
 					Price:       pkg.UintPtr(200),
 				},
 			},
-			want: &service.Product{
+			want: &repository.Product{
 				Id:          p.Id,
 				Name:        "Updated Test Product",
 				Description: "Updated Test Description",
@@ -322,7 +322,7 @@ func TestProductService_UpdateProduct(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				id:  p.Id,
-				update: &service.ProductUpdate{
+				update: &repository.ProductUpdate{
 					Name:        pkg.StringPtr(""),
 					Description: pkg.StringPtr("Updated Test Description"),
 					Price:       pkg.UintPtr(200),
@@ -334,19 +334,19 @@ func TestProductService_UpdateProduct(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := productService.UpdateProduct(tt.args.ctx, tt.args.id, tt.args.update)
+			got, err := productRepository.UpdateProduct(tt.args.ctx, tt.args.id, tt.args.update)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ProductService.UpdateProduct() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ProductRepository.UpdateProduct() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ProductService.UpdateProduct() = %v, want %v", got, tt.want)
+				t.Errorf("ProductRepository.UpdateProduct() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestProductService_DeleteProduct(t *testing.T) {
+func TestProductRepository_DeleteProduct(t *testing.T) {
 
 	ctx := context.Background()
 
@@ -358,9 +358,9 @@ func TestProductService_DeleteProduct(t *testing.T) {
 	defer firestoreClient.Close()
 
 	firestoreService := db.NewFirestoreService(firestoreClient)
-	productService := db.NewProductService(firestoreService)
+	productRepository := db.NewProductService(firestoreService)
 
-	p, err := productService.CreateProduct(ctx, &service.Product{
+	p, err := productRepository.CreateProduct(ctx, &repository.Product{
 		Name:        "Test Product",
 		Description: "Test Description",
 		Price:       100,
@@ -368,7 +368,7 @@ func TestProductService_DeleteProduct(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create product: %v", err)
 	}
-	defer deleteTestProduct(t, ctx, productService, p.Id)
+	defer deleteTestProduct(t, ctx, productRepository, p.Id)
 
 	type args struct {
 		ctx context.Context
@@ -398,8 +398,8 @@ func TestProductService_DeleteProduct(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := productService.DeleteProduct(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
-				t.Errorf("ProductService.DeleteProduct() error = %v, wantErr %v", err, tt.wantErr)
+			if err := productRepository.DeleteProduct(tt.args.ctx, tt.args.id); (err != nil) != tt.wantErr {
+				t.Errorf("ProductRepository.DeleteProduct() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

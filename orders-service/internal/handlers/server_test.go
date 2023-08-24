@@ -20,20 +20,22 @@ type TestGRPCServer struct {
 	*grpc_handlers.GRPCServer
 
 	// Add mock services here
-	ProductService  mock.ProductService
-	CustomerService mock.CustomerService
-	OrderService    mock.OrderService
+	ProductRepository  mock.ProductRepository
+	CustomerRepository mock.CustomerRepository
+	OrderRepository    mock.OrderRepository
 }
 
 func NewTestGRPCServer(tb testing.TB) *TestGRPCServer {
 	s := &TestGRPCServer{
-		GRPCServer: grpc_handlers.NewGRPCServer(),
+		GRPCServer: grpc_handlers.NewGRPCServer(
+			
+		),
 	}
 
 	// Set mock services here
-	s.GRPCServer.ProductService = &s.ProductService
-	s.GRPCServer.CustomerService = &s.CustomerService
-	s.GRPCServer.OrderService = &s.OrderService
+	s.GRPCServer.ProductRepository = &s.ProductRepository
+	s.GRPCServer.CustomerRepository = &s.CustomerRepository
+	s.GRPCServer.OrderRepository = &s.OrderRepository
 
 	return s
 }
